@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { authErrorMessage, NOT_CONFIGURED } from '@/lib/auth/errors';
 import { normalizePhone, parseIdentifier, safeNext } from '@/lib/auth/identifier';
 import { getCatalog, getSession } from '@/lib/data';
+import { homeFor } from '@/lib/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/server';
@@ -43,7 +44,7 @@ function resolveGradeTrack(catalog: Catalog, gradeId: string, trackId: string) {
 async function destinationFor(userId: string): Promise<string> {
   const supabase = await createClient();
   const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
-  return data?.role === 'admin' ? '/admin' : '/wheel';
+  return homeFor(data?.role);
 }
 
 export async function signInAction(_prev: FormState, formData: FormData): Promise<FormState> {

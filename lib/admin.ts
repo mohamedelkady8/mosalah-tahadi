@@ -1,14 +1,24 @@
 import 'server-only';
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/data';
+import { isStaff, SUPPORT_HOME } from '@/lib/roles';
 import { createClient } from '@/lib/supabase/server';
 
 /** For admin pages. The admin layout shows the "admins only" screen, this guards the page itself too. */
 export async function requireAdmin() {
   const { userId, profile } = await getSession();
   if (!userId || !profile) redirect('/login?next=/admin');
+  if (profile.role === 'support') redirect(SUPPORT_HOME);
   if (profile.role !== 'admin') redirect('/admin');
   return { userId, profile, supabase: await createClient() };
+}
+
+/** For the student lookup: admins and support staff. */
+export async function requireStaff() {
+  const { userId, profile } = await getSession();
+  if (!userId || !profile) redirect(`/login?next=${SUPPORT_HOME}`);
+  if (!isStaff(profile.role)) redirect('/admin');
+  return { userId, profile };
 }
 
 export const PAGE_SIZE = 25;

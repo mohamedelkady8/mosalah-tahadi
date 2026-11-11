@@ -11,6 +11,7 @@ import { uid } from '@/lib/games/random';
 import { parseSettings } from '@/lib/games/settings';
 import { GAME_TYPES } from '@/lib/games/types';
 import { GAME_KINDS, KIND_INFO, kindOf } from '@/lib/kinds';
+import { isUuid } from '@/lib/admin';
 import { refreshShared } from '@/lib/shared';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
@@ -27,6 +28,21 @@ async function asAdmin() {
   const { userId, profile } = await getSession();
   if (!userId || profile?.role !== 'admin') return null;
   return { userId, supabase: await createClient() };
+}
+
+/**
+ * Admins, or support staff acting on a student account. Support has no admin rights in the
+ * database, so its changes go through the service client, and only for accounts that are students.
+ */
+async function asStaffFor(studentId: string) {
+  const { userId, profile } = await getSession();
+  if (!userId || !profile) return null;
+  if (profile.role === 'admin') return { userId, supabase: await createClient() };
+  if (profile.role !== 'support' || !isUuid(studentId)) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from('profiles').select('role').eq('id', studentId).maybeSingle();
+  return data?.role === 'student' ? { userId, supabase: admin } : null;
 }
 
 function firstIssue(error: z.ZodError): string {
@@ -510,7 +526,7 @@ const studentInput = z.object({
 });
 
 export async function updateStudent(id: string, raw: z.input<typeof studentInput>): Promise<ActionResult> {
-  const ctx = await asAdmin();
+  const ctx = await asStaffFor(id);
   if (!ctx) return NOT_ADMIN;
   const parsed = studentInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
@@ -581,7 +597,7 @@ export async function setUserRole(id: string, role: 'student' | 'admin'): Promis
 }
 
 export async function resetStudentPassword(id: string, password: string): Promise<ActionResult> {
-  const ctx = await asAdmin();
+  const ctx = await asStaffFor(id);
   if (!ctx) return NOT_ADMIN;
   if (password.length < 6) return { ok: false, error: 'كلمة السر لازم تبقى ٦ حروف على الأقل.' };
   const admin = createAdminClient();

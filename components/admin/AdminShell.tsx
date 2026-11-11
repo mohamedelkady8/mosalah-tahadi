@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { HomeIcon, LayersIcon, LogoutIcon, QuoteIcon, SectionIcon, UsersIcon, WheelIcon, type IconProps } from '@/components/ui/icons';
+import { HomeIcon, LayersIcon, LogoutIcon, QuoteIcon, SearchIcon, SectionIcon, UsersIcon, WheelIcon, type IconProps } from '@/components/ui/icons';
+import { SUPPORT_HOME } from '@/lib/roles';
 import { SECTION_KEYS, SECTIONS, type SectionKey } from '@/lib/sections';
 
 const SECTION_ADMIN: Record<SectionKey, string> = {
@@ -32,14 +33,21 @@ const GROUPS: { title?: string; links: { href: string; label: string; icon: (p: 
     title: 'الموقع',
     links: [
       { href: '/admin/students', label: 'الطلاب', icon: UsersIcon, match: under('/admin/students') },
+      { href: SUPPORT_HOME, label: 'دوّر على طالب', icon: SearchIcon, match: under(SUPPORT_HOME) },
       { href: '/admin/grades', label: 'المراحل والشعب', icon: LayersIcon, match: under('/admin/grades') },
       { href: '/admin/quotes', label: 'جمل الصفحة الرئيسية', icon: QuoteIcon, match: under('/admin/quotes') },
     ],
   },
 ];
 
-export function AdminShell({ name, children }: { name: string; children: React.ReactNode }) {
+const SUPPORT_GROUPS: typeof GROUPS = [{ links: [{ href: SUPPORT_HOME, label: 'دوّر على طالب', icon: SearchIcon, match: under(SUPPORT_HOME) }] }];
+
+/** `support`: support staff only get the student lookup. */
+export function AdminShell({ name, support = false, children }: { name: string; support?: boolean; children: React.ReactNode }) {
   const pathname = usePathname();
+  const groups = support ? SUPPORT_GROUPS : GROUPS;
+  const home = support ? SUPPORT_HOME : '/admin';
+  const brand = support ? 'الدعم' : 'لوحة التحكم';
   const [open, setOpen] = useState(false);
 
   useEffect(() => setOpen(false), [pathname]);
@@ -54,13 +62,13 @@ export function AdminShell({ name, children }: { name: string; children: React.R
   return (
     <div className={`ad-root${open ? ' nav-open' : ''}`} dir="rtl">
       <aside className="ad-side" id="ad-side" aria-label="قائمة لوحة التحكم">
-        <Link href="/admin" className="ad-brand">
+        <Link href={home} className="ad-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/assets/logo.svg" alt="" />
-          <span>لوحة التحكم</span>
+          <span>{brand}</span>
         </Link>
         <nav className="ad-nav">
-          {GROUPS.map((group, gi) => (
+          {groups.map((group, gi) => (
             <div key={gi} className="ad-nav-group">
               {group.title && <span className="ad-nav-title">{group.title}</span>}
               {group.links.map(({ href, label, icon: Icon, match }) => (
@@ -71,11 +79,15 @@ export function AdminShell({ name, children }: { name: string; children: React.R
               ))}
             </div>
           ))}
-          <div className="sep" />
-          <Link href="/wheel">
-            <WheelIcon size={20} />
-            افتح الموقع
-          </Link>
+          {!support && (
+            <>
+              <div className="sep" />
+              <Link href="/wheel">
+                <WheelIcon size={20} />
+                افتح الموقع
+              </Link>
+            </>
+          )}
         </nav>
         <div className="ad-me">
           <span>
@@ -104,10 +116,10 @@ export function AdminShell({ name, children }: { name: string; children: React.R
               <path d="M4 7 H20 M4 12 H20 M4 17 H20" />
             </svg>
           </button>
-          <Link href="/admin" className="ad-mbar-brand">
+          <Link href={home} className="ad-mbar-brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/assets/logo.svg" alt="" />
-            لوحة التحكم
+            {brand}
           </Link>
         </div>
         {children}

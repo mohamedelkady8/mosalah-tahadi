@@ -1,7 +1,7 @@
 import type { GameType } from '@/lib/games/types';
 import type { GameKind } from '@/lib/kinds';
 
-export type UserRole = 'student' | 'admin';
+export type UserRole = 'student' | 'admin' | 'support';
 export type GameStatus = 'draft' | 'published';
 
 export interface Grade {

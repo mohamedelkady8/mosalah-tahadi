@@ -6,6 +6,7 @@ import { Grain } from '@/components/site/SiteHeader';
 import { LockIcon } from '@/components/ui/icons';
 import { getSession } from '@/lib/data';
 import { firstName } from '@/lib/format';
+import { isStaff } from '@/lib/roles';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import '../admin.css';
 
@@ -48,12 +49,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
   const { userId, profile } = await getSession();
   if (!userId) redirect('/login?next=/admin');
-  if (profile?.role !== 'admin') {
+  if (!profile || !isStaff(profile.role)) {
     return (
       <AdminGate title="الصفحة دي للأدمن بس" signedIn>
         إنت داخل بحساب طالب. لو إنت من التيم، خلّي المسؤول يخلّي حسابك أدمن من صفحة الطلاب.
       </AdminGate>
     );
   }
-  return <AdminShell name={firstName(profile.full_name)}>{children}</AdminShell>;
+  return (
+    <AdminShell name={firstName(profile.full_name)} support={profile.role === 'support'}>
+      {children}
+    </AdminShell>
+  );
 }

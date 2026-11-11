@@ -6,6 +6,7 @@ import { SitePage } from '@/components/site/SiteHeader';
 import { safeNext } from '@/lib/auth/identifier';
 import { NOT_CONFIGURED } from '@/lib/auth/errors';
 import { getSession } from '@/lib/data';
+import { homeFor } from '@/lib/roles';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 export const metadata: Metadata = pageMeta({
@@ -17,7 +18,7 @@ export const metadata: Metadata = pageMeta({
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
   const session = await getSession();
-  if (session.profile) redirect(safeNext(next) ?? (session.profile.role === 'admin' ? '/admin' : '/wheel'));
+  if (session.profile) redirect(safeNext(next) ?? homeFor(session.profile.role));
 
   return (
     <SitePage back={{ href: '/grades' }}>

@@ -8,6 +8,7 @@ import { PAGE_SIZE, pageParam, requireAdmin, strParam } from '@/lib/admin';
 import { displayContact } from '@/lib/auth/identifier';
 import { getCatalog, gradeName, trackName } from '@/lib/data';
 import { formatDate, num } from '@/lib/format';
+import { ROLE_LABELS } from '@/lib/roles';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Profile } from '@/lib/types';
 
@@ -112,10 +113,10 @@ export default async function AdminStudents({ searchParams }: { searchParams: Pr
                     <Link href={`/admin/students/${s.id}`} className="t-title">
                       {s.full_name}
                     </Link>
-                    {s.role === 'admin' && (
+                    {s.role !== 'student' && (
                       <>
                         {' '}
-                        <span className="badge badge-wine">أدمن</span>
+                        <span className="badge badge-wine">{ROLE_LABELS[s.role]}</span>
                       </>
                     )}
                   </td>

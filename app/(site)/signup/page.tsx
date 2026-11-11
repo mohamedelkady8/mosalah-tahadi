@@ -5,6 +5,7 @@ import { SignupForm } from '@/components/auth/AuthForms';
 import { SitePage } from '@/components/site/SiteHeader';
 import { NOT_CONFIGURED } from '@/lib/auth/errors';
 import { getCatalog, getSession } from '@/lib/data';
+import { homeFor } from '@/lib/roles';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 export const metadata: Metadata = pageMeta({
@@ -16,7 +17,7 @@ export const metadata: Metadata = pageMeta({
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ grade?: string }> }) {
   const { grade } = await searchParams;
   const [session, catalog] = await Promise.all([getSession(), getCatalog()]);
-  if (session.profile) redirect(session.profile.role === 'admin' ? '/admin' : '/wheel');
+  if (session.profile) redirect(homeFor(session.profile.role));
   const defaultGradeId = catalog.grades.find((g) => g.slug === grade)?.id;
 
   return (

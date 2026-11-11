@@ -196,7 +196,7 @@
 .ad-dq-q{margin:0;line-height:1.8;font-family:var(--font-plex-medium),var(--f-body);font-weight:500;white-space:pre-line}
 
 @media (max-width:1100px){
-  .ad-form{grid-template-columns:1fr}
+  .ad-form{grid-template-columns:minmax(0,1fr)}
   .ad-form-side{position:static}
 }
 @media (max-width:860px){

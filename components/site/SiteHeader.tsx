@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getSession } from '@/lib/data';
 import { firstName } from '@/lib/format';
+import { homeFor, isStaff } from '@/lib/roles';
 import { TransitionLink } from '@/components/motion/PageTransition';
 import { ChartIcon, UserIcon, WheelIcon } from '@/components/ui/icons';
 
@@ -20,8 +21,8 @@ export async function HeaderActions({ children, wheel = true }: { children?: Rea
   const { profile } = await getSession();
   return (
     <div className="head-actions">
-      {profile?.role === 'admin' && (
-        <Link href="/admin" className="pill pill-gold" title="لوحة التحكم">
+      {isStaff(profile?.role) && (
+        <Link href={homeFor(profile?.role)} className="pill pill-gold" title="لوحة التحكم">
           <ChartIcon size={18} />
           <span className="pill-text">لوحة التحكم</span>
         </Link>

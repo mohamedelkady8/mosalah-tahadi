@@ -197,7 +197,20 @@ export interface StudentDetails {
   contact: string;
 }
 
-export function StudentEditor({ student, catalog, isSelf, serviceKey }: { student: StudentDetails; catalog: Catalog; isSelf: boolean; serviceKey: boolean }) {
+/** `limited` (support staff): details and password only, no role changes or deleting. */
+export function StudentEditor({
+  student,
+  catalog,
+  isSelf,
+  serviceKey,
+  limited = false,
+}: {
+  student: StudentDetails;
+  catalog: Catalog;
+  isSelf: boolean;
+  serviceKey: boolean;
+  limited?: boolean;
+}) {
   const [name, setName] = useState(student.full_name);
   const [phone, setPhone] = useState(student.phone ?? '');
   const [gradeId, setGradeId] = useState(student.grade_id ?? '');
@@ -280,30 +293,36 @@ export function StudentEditor({ student, catalog, isSelf, serviceKey }: { studen
         )}
       </section>
 
-      <section className="ad-panel stack">
-        <h2>الصلاحية</h2>
-        <p className="muted">
-          {student.role === 'admin' ? 'الحساب ده أدمن: يقدر يدخل لوحة التحكم ويعدّل كل حاجة.' : 'الحساب ده طالب. لو خليته أدمن هيقدر يدخل لوحة التحكم ويعدّل كل حاجة.'}
-        </p>
-        {isSelf ? (
-          <span className="badge">ده حسابك</span>
-        ) : (
-          <button
-            type="button"
-            className={`btn ${student.role === 'admin' ? 'btn-ghost' : 'btn-wine'}`}
-            style={{ alignSelf: 'flex-start' }}
-            disabled={pending}
-            onClick={() => {
-              const next = student.role === 'admin' ? 'student' : 'admin';
-              if (confirm(next === 'admin' ? `تخلّي ${student.full_name} أدمن؟` : `ترجّع ${student.full_name} طالب؟`)) run(() => setUserRole(student.id, next));
-            }}
-          >
-            {student.role === 'admin' ? 'رجّعه طالب' : 'خلّيه أدمن'}
-          </button>
-        )}
-      </section>
+      {!limited && (
+        <section className="ad-panel stack">
+          <h2>الصلاحية</h2>
+          <p className="muted">
+            {student.role === 'admin'
+              ? 'الحساب ده أدمن: يقدر يدخل لوحة التحكم ويعدّل كل حاجة.'
+              : student.role === 'support'
+                ? 'الحساب ده دعم: بيدوّر على طالب واحد برقمه أو إيميله ويغيّرله بياناته وكلمة السر بس.'
+                : 'الحساب ده طالب. لو خليته أدمن هيقدر يدخل لوحة التحكم ويعدّل كل حاجة.'}
+          </p>
+          {isSelf ? (
+            <span className="badge">ده حسابك</span>
+          ) : (
+            <button
+              type="button"
+              className={`btn ${student.role === 'admin' ? 'btn-ghost' : 'btn-wine'}`}
+              style={{ alignSelf: 'flex-start' }}
+              disabled={pending}
+              onClick={() => {
+                const next = student.role === 'admin' ? 'student' : 'admin';
+                if (confirm(next === 'admin' ? `تخلّي ${student.full_name} أدمن؟` : `ترجّع ${student.full_name} طالب؟`)) run(() => setUserRole(student.id, next));
+              }}
+            >
+              {student.role === 'admin' ? 'رجّعه طالب' : 'خلّيه أدمن'}
+            </button>
+          )}
+        </section>
+      )}
 
-      {!isSelf && (
+      {!isSelf && !limited && (
         <section className="ad-panel ad-danger-zone stack">
           <h2>منطقة خطر</h2>
           <div className="row">

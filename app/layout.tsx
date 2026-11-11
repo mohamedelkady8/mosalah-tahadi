@@ -54,7 +54,8 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
   openGraph: { type: 'website', locale: 'ar_EG', siteName: SITE_NAME, title: HOME_TITLE, description: SITE_DESCRIPTION, images: [OG_IMAGE] },
   twitter: { card: 'summary_large_image', title: HOME_TITLE, description: SITE_DESCRIPTION, images: [OG_IMAGE.url] },
-  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
+  // Public ownership token for mosalah-team.com; deployments can override it if needed.
+  verification: { google: process.env.GOOGLE_SITE_VERIFICATION || 'v1xoY1UpnmWkdTD_ujyjfd9TJsaiMOT4MYLV9WldvQQ' },
 };
 
 export const viewport: Viewport = {

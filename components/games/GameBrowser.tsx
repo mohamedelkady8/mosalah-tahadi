@@ -51,53 +51,55 @@ export function GameBrowser({ games, best }: { games: GameCardData[]; best: Reco
 
   return (
     <>
-      <div className="card-soft st-filters a-fadeup" style={{ animationDelay: '.5s' }}>
-        {games.length > 6 && (
-          <div className="gm-search">
-            <SearchIcon size={18} />
-            <input className="input" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر على لعبة أو درس" aria-label="دوّر على لعبة" />
+      <div className="gm-filter a-fadeup" style={{ animationDelay: '.5s' }}>
+        {doneCount > 0 && (
+          <div className="tabs" role="group" aria-label="اللي لعبته">
+            {(
+              [
+                ['all', 'الكل'],
+                ['new', `جديدة عليك (${num(games.length - doneCount)})`],
+                ['done', `لعبتها (${num(doneCount)})`],
+              ] as [Played, string][]
+            ).map(([key, label]) => (
+              <button key={key} type="button" className={played === key ? 'on' : ''} aria-pressed={played === key} onClick={() => setPlayed(key)}>
+                {label}
+              </button>
+            ))}
           </div>
         )}
         {types.length > 1 && (
-          <div className="chips" role="group" aria-label="نوع اللعبة">
+          <div className="chips gm-types" role="group" aria-label="نوع اللعبة">
             <button type="button" className={`chip${type === 'all' ? ' on' : ''}`} aria-pressed={type === 'all'} onClick={() => setType('all')}>
               كل الأنواع
             </button>
             {types.map((t) => (
               <button key={t} type="button" className={`chip${type === t ? ' on' : ''}`} aria-pressed={type === t} onClick={() => setType(t)}>
-                <GameTypeIcon type={t} size={16} />
+                <GameTypeIcon type={t} size={15} />
                 {getDef(t).label}
               </button>
             ))}
           </div>
         )}
-        <div className="row" style={{ justifyContent: 'center' }}>
-          {topics.length > 1 && (
-            <select className="select input-sm" style={{ width: 'auto', minWidth: 160 }} value={topic} onChange={(e) => setTopic(e.target.value)} aria-label="الدرس">
-              <option value="all">كل الدروس</option>
-              {topics.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          )}
-          {doneCount > 0 && (
-            <div className="tabs" role="group" aria-label="اللي لعبته">
-              {(
-                [
-                  ['all', 'الكل'],
-                  ['new', `جديدة عليك (${num(games.length - doneCount)})`],
-                  ['done', `لعبتها (${num(doneCount)})`],
-                ] as [Played, string][]
-              ).map(([key, label]) => (
-                <button key={key} type="button" className={played === key ? 'on' : ''} aria-pressed={played === key} onClick={() => setPlayed(key)}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {(games.length > 12 || topics.length > 1) && (
+          <div className="row" style={{ justifyContent: 'center' }}>
+            {games.length > 12 && (
+              <div className="gm-search">
+                <SearchIcon size={18} />
+                <input className="input input-sm" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر على لعبة أو درس" aria-label="دوّر على لعبة" />
+              </div>
+            )}
+            {topics.length > 1 && (
+              <select className="select input-sm" style={{ width: 'auto', minWidth: 160 }} value={topic} onChange={(e) => setTopic(e.target.value)} aria-label="الدرس">
+                <option value="all">كل الدروس</option>
+                {topics.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
       </div>
 
       {list.length ? (

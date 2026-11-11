@@ -30,7 +30,7 @@ export default async function PlayPage({ params }: { params: Params }) {
   const [game, catalog] = await Promise.all([loadGame(slug), getCatalog()]);
   const myGrade = catalog.grades.find((g) => g.id === profile.grade_id);
   const backHref = myGrade ? `/grades/${myGrade.slug}` : isAdmin ? '/admin/games' : '/grades';
-  const backLabel = myGrade ? `ألعاب ${myGrade.name}` : 'رجوع';
+  const backLabel = myGrade ? 'الألعاب' : 'رجوع';
 
   if (!game) {
     return (

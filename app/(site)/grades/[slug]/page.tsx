@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { GameBrowser } from '@/components/games/GameBrowser';
 import { SitePage } from '@/components/site/SiteHeader';
-import { BoltIcon, GamepadIcon, LockIcon, TrophyIcon, UserIcon } from '@/components/ui/icons';
+import { Steps } from '@/components/site/Steps';
+import { BoltIcon, GamepadIcon, LockIcon, StarIcon, TrophyIcon } from '@/components/ui/icons';
 import { FlashToast } from '@/components/ui/Toast';
 import { getCatalog, getSession, gradeName, trackName } from '@/lib/data';
 import { firstName, num } from '@/lib/format';
@@ -31,7 +32,7 @@ export default async function GradeGamesPage({ params, searchParams }: { params:
       <SitePage back={{ href: '/grades', label: 'المراحل' }}>
         <p className="hello">{grade.subtitle}</p>
         <h1 className="gp-title">{grade.name}</h1>
-        <p className="gp-sub">ألعاب في العربي معمولة مخصوص لمرحلتك: نحو، بلاغة، أدب، وقراءة. اعمل حساب وابدأ تجمع نقط.</p>
+        <p className="gp-sub">ألعاب في العربي معمولة مخصوص لمرحلتك: نحو، بلاغة، أدب، وقراءة.</p>
         <div className="card empty st-panel a-fadeup" style={{ animationDelay: '.45s', maxWidth: 560 }}>
           <div className="e-ic">
             <GamepadIcon size={30} />
@@ -111,37 +112,34 @@ export default async function GradeGamesPage({ params, searchParams }: { params:
       </p>
 
       {!isAdmin && (
-        <div className="st-strip a-fadeup" style={{ animationDelay: '.4s' }}>
-          <div className="st-stat">
-            <b>{num(profile.points)}</b>
-            <span>نقطة</span>
+        <>
+          <Steps current={2} />
+          <div className="st-bar a-fadeup" style={{ animationDelay: '.4s' }}>
+            <div className="st-item">
+              <b>
+                <StarIcon size={18} filled /> {num(profile.points)}
+              </b>
+              <span>نقطة</span>
+            </div>
+            <div className="st-item">
+              <b>
+                <GamepadIcon size={18} /> {num(played)}
+                <small>/{num(games.length)}</small>
+              </b>
+              <span>لعبة لعبتها</span>
+            </div>
+            <Link href="/leaderboard" className="st-item" title={`ترتيبك في ${gradeName(catalog, grade.id)}`}>
+              <b>
+                <TrophyIcon size={18} /> {myRank ? `#${num(myRank)}` : '—'}
+              </b>
+              <span>ترتيبك</span>
+            </Link>
+            <Link href="/daily" className="btn btn-gold btn-sm">
+              <BoltIcon size={16} /> سؤال اليوم
+            </Link>
           </div>
-          <div className="st-stat">
-            <b>
-              {num(played)}
-              <small> / {num(games.length)}</small>
-            </b>
-            <span>لعبة لعبتها</span>
-          </div>
-          <Link href="/leaderboard" className="st-stat">
-            <b>{myRank ? `#${num(myRank)}` : '—'}</b>
-            <span>
-              <TrophyIcon size={14} /> ترتيبك في {gradeName(catalog, grade.id)}
-            </span>
-          </Link>
-        </div>
+        </>
       )}
-      <div className="st-links a-fadeup" style={{ animationDelay: '.45s' }}>
-        <Link href="/daily" className="btn btn-gold btn-sm">
-          <BoltIcon size={16} /> سؤال اليوم
-        </Link>
-        <Link href="/leaderboard" className="btn btn-cream btn-sm">
-          <TrophyIcon size={16} /> لوحة الشرف
-        </Link>
-        <Link href="/me" className="btn btn-cream btn-sm">
-          <UserIcon size={16} /> صفحتي
-        </Link>
-      </div>
 
       <GameBrowser games={games} best={best} />
     </SitePage>

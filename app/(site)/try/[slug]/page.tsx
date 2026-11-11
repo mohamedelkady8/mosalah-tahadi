@@ -15,7 +15,7 @@ export default async function TryGamePage({ params }: { params: Params }) {
   const game = getSample((await params).slug);
   if (!game) notFound();
   return (
-    <SitePage back={{ href: '/try', label: 'الألعاب التجريبية' }}>
+    <SitePage back={{ href: '/try', label: 'الألعاب' }}>
       <GameShell game={game} mode="practice" backHref="/try" backLabel="ألعاب تانية" />
     </SitePage>
   );

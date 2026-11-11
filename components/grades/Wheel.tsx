@@ -1,24 +1,18 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { useToast } from '@/components/ui/Toast';
+import { SectionLink } from '@/components/site/SectionLink';
+import { SECTIONS, type Section } from '@/lib/sections';
 
-interface WheelItem {
-  label: string;
-  desc: string;
-  bg: string;
-  fg: string;
-  href?: string;
-}
+type WheelItem = Section & { bg: string; fg: string };
 
 const ITEMS: WheelItem[] = [
-  { label: 'مسابقات', desc: 'نافس زمايلك، وخش لوحة الشرف.', bg: '#7A2A3A', fg: '#FFFFFF', href: '/leaderboard' },
-  { label: 'ألعاب', desc: 'اتعلم العربي وإنت بتلعب.', bg: '#E8C46F', fg: '#2E2E30', href: '/games' },
-  { label: 'ع السريع', desc: '١٠ أسئلة، وبعد كل سؤال تحليل يقولك مشكلتك فين.', bg: '#F4E6CF', fg: '#2E2E30', href: 'https://tahadi-team-hamthalah.vercel.app/' },
-  { label: 'نصايح', desc: 'نصايح من التيم هتسهّل عليك.', bg: '#1F6FB5', fg: '#FFFFFF' },
-  { label: 'فيديوهات تحفيزية', desc: 'فيديوهات من التيم هتفرق معاك.', bg: '#E8C46F', fg: '#2E2E30' },
-  { label: 'سؤال اليوم', desc: 'سؤال واحد، يتحل في ١٠ ثواني.', bg: '#F4E6CF', fg: '#2E2E30', href: '/daily' },
+  { ...SECTIONS.contests, bg: '#7A2A3A', fg: '#FFFFFF' },
+  { ...SECTIONS.games, bg: '#E8C46F', fg: '#2E2E30' },
+  { ...SECTIONS.quick, bg: '#F4E6CF', fg: '#2E2E30' },
+  { ...SECTIONS.tips, bg: '#1F6FB5', fg: '#FFFFFF' },
+  { ...SECTIONS.videos, bg: '#E8C46F', fg: '#2E2E30' },
+  { ...SECTIONS.daily, bg: '#F4E6CF', fg: '#2E2E30' },
 ];
 
 const N = ITEMS.length;
@@ -26,7 +20,6 @@ const STEP = 360 / N;
 const BACKGROUND = `conic-gradient(${ITEMS.map((it, i) => `${it.bg} ${i * STEP}deg ${(i + 1) * STEP}deg`).join(', ')})`;
 
 export function Wheel() {
-  const toast = useToast();
   const [angle, setAngle] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [spun, setSpun] = useState(false);
@@ -34,9 +27,16 @@ export function Wheel() {
   const angleRef = useRef(0);
   const wheelRef = useRef<HTMLDivElement>(null);
   const pointerRef = useRef<SVGSVGElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const tickFrame = useRef(0);
 
   useEffect(() => () => cancelAnimationFrame(tickFrame.current), []);
+
+  useEffect(() => {
+    if (result === null) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    resultRef.current?.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+  }, [result]);
 
   /** Flicks the pointer every time a segment edge passes under it while the wheel turns. */
   function tickPointer(until: number) {
@@ -85,36 +85,27 @@ export function Wheel() {
 
   return (
     <section className="wheel-sec" aria-labelledby="wheelTitle" data-reveal="">
-      <div className="wheel-text">
-        <h2 id="wheelTitle">يلا نبدأ</h2>
-        <p>مش عارف تبدأ منين؟ لف العجلة، وشوف هتبدأ بإيه النهارده.</p>
-        {picked && (
-          <div className="result">
-            <span className="r-k">طلعتلك</span>
-            <strong>{picked.label}</strong>
-            <span>{picked.desc}</span>
-            {picked.href?.startsWith('/') ? (
-              <Link href={picked.href}>يلا بينا</Link>
-            ) : picked.href ? (
-              <a href={picked.href} target="_blank" rel="noopener">
-                يلا بينا
-              </a>
-            ) : (
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toast('الجزء ده تحت التجهيز، وقريب هيبقى موجود');
-                }}
-              >
-                يلا بينا
-              </a>
-            )}
-          </div>
-        )}
+      <div className="wheel-head">
+        <span className="wheel-k">مش عارف تبدأ منين؟</span>
+        <h2 id="wheelTitle">عجلة الحظ</h2>
+        <p>لفّها، وهي تختارلك تبدأ بإيه النهارده.</p>
+      </div>
+      <div className="wheel-act">
         <button type="button" className="spin-btn" onClick={spin} disabled={spinning}>
           {spinning ? 'بتلف...' : spun ? 'لف تاني' : 'لف العجلة'}
         </button>
+        <div ref={resultRef} aria-live="polite" className="result-slot">
+          {picked && (
+            <div className="result">
+              <span className="r-k">طلعتلك</span>
+              <strong>{picked.label}</strong>
+              <span>{picked.desc}</span>
+              <SectionLink section={picked} className="go">
+                يلا بينا
+              </SectionLink>
+            </div>
+          )}
+        </div>
       </div>
       <div className="wheel-box">
         <svg ref={pointerRef} aria-hidden="true" viewBox="0 0 40 34" className="pointer">

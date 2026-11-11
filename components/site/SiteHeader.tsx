@@ -10,7 +10,7 @@ export function BackLink({ href, label = 'رجوع' }: { href: string; label?: s
       <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2E2E30" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 6 L15 12 L9 18" />
       </svg>
-      {label}
+      <span className="back-text">{label}</span>
     </TransitionLink>
   );
 }
@@ -31,7 +31,7 @@ export async function HeaderActions({ children }: { children?: React.ReactNode }
           <span className="pill-text">{firstName(profile.full_name)}</span>
         </Link>
       ) : (
-        <Link href="/login" className="pill" title="دخول">
+        <Link href="/login" className="pill pill-login" title="دخول">
           <UserIcon size={18} />
           <span className="pill-text">دخول</span>
         </Link>
@@ -41,11 +41,11 @@ export async function HeaderActions({ children }: { children?: React.ReactNode }
   );
 }
 
-export function Logo({ height = 52 }: { height?: number }) {
+export function Logo() {
   return (
-    <TransitionLink href="/" dir="down" aria-label="الصفحة الرئيسية" style={{ display: 'block' }}>
+    <TransitionLink href="/" dir="down" aria-label="الصفحة الرئيسية" style={{ display: 'block', flex: 'none' }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/assets/logo.svg" alt="محمد صلاح" style={{ height, width: 'auto', display: 'block' }} />
+      <img src="/assets/logo.svg" alt="محمد صلاح" className="gp-logo" />
     </TransitionLink>
   );
 }

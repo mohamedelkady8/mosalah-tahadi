@@ -37,31 +37,34 @@ export function GameCards({
         const b = best?.[g.id];
         const p = b ? percent(b.score, b.max) : 0;
         return (
-          <Link key={g.id} href={`${hrefPrefix}${g.slug}`} className="gp-card" style={{ animationDelay: `${Math.min(0.1 + i * 0.06, 1).toFixed(2)}s` }}>
-            {g.cover_url && (
-              <span className="gm-cover-thumb" aria-hidden="true">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={g.cover_url} alt="" />
-              </span>
-            )}
+          <Link key={g.id} href={`${hrefPrefix}${g.slug}`} className="gp-card gm-game" style={{ animationDelay: `${Math.min(0.1 + i * 0.05, 0.8).toFixed(2)}s` }}>
             <span className="shine-wrap" aria-hidden="true">
               <span className="shine" style={{ animationDelay: `${(2 + (i % 6) * 0.6).toFixed(1)}s` }} />
             </span>
-            {b && (
-              <span className={`gm-best${p >= 100 ? ' top' : ''}`} title="أحسن نتيجة ليك">
-                <StarIcon size={13} filled /> {num(p)}٪
-              </span>
-            )}
-            <span className="gicon" aria-hidden="true">
-              <GameTypeIcon type={g.type} />
+            <span className={`gicon${g.cover_url ? ' has-cover' : ''}`} aria-hidden="true">
+              {g.cover_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={g.cover_url} alt="" />
+              ) : (
+                <GameTypeIcon type={g.type} />
+              )}
             </span>
-            <span className="g-k">{def.label}</span>
-            <span className="g-n">{g.title}</span>
-            {g.description && <span className="g-s">{g.description}</span>}
-            <span className="gm-card-meta">
-              <span className="badge badge-light">{itemsLabel(g.type, g.item_count)}</span>
-              <span className="badge badge-light">{DIFFICULTY_LABELS[g.difficulty] ?? DIFFICULTY_LABELS[1]}</span>
-              {g.topic && <span className="badge badge-light">{g.topic}</span>}
+            <span className="g-txt">
+              <span className="g-k">
+                {def.label}
+                {b ? (
+                  <span className={`gm-best${p >= 100 ? ' top' : ''}`} title="أحسن نتيجة ليك">
+                    <StarIcon size={12} filled /> {num(p)}٪
+                  </span>
+                ) : (
+                  best && <span className="gm-new">جديدة</span>
+                )}
+              </span>
+              <span className="g-n">{g.title}</span>
+              <span className="g-m">
+                {itemsLabel(g.type, g.item_count)} · {DIFFICULTY_LABELS[g.difficulty] ?? DIFFICULTY_LABELS[1]}
+                {g.topic && ` · ${g.topic}`}
+              </span>
             </span>
             <span className="gp-go" aria-hidden="true">
               <ChevronEnd />

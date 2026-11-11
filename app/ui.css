@@ -88,7 +88,7 @@
 
 /* Page sections on the gradient background */
 .page-hero{display:flex;flex-direction:column;align-items:center;text-align:center}
-.page-hero .gp-title{font-size:clamp(46px,8vw,92px)}
+.page-hero .gp-title{font-size:clamp(40px,6.4vw,72px)}
 .section-title{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,4.4vw,44px);line-height:1.2;color:var(--gold);margin:0}
 .light-text{color:#FFF6E8}
 .muted{color:#6A4438;font-size:14px;line-height:1.7}
@@ -107,7 +107,8 @@
 
 /* Empty state */
 .empty{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:34px 22px}
-.empty .e-ic{width:64px;height:64px;border-radius:20px;background:var(--gold);color:var(--wine);display:flex;align-items:center;justify-content:center}
+.empty .e-ic{width:50px;height:50px;border-radius:16px;background:var(--gold);color:var(--wine);display:flex;align-items:center;justify-content:center}
+.empty .e-ic svg{width:24px;height:24px}
 .empty h3{margin:0;font-family:var(--f-display);font-weight:400;font-size:30px}
 .empty p{margin:0;max-width:440px;line-height:1.8}
 .gp-center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}

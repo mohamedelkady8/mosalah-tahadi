@@ -1,5 +1,7 @@
 import { Fragment, type CSSProperties } from 'react';
+import { SectionLink } from '@/components/site/SectionLink';
 import { HeaderActions } from '@/components/site/SiteHeader';
+import { SECTIONS, type Section } from '@/lib/sections';
 import { LandingStage } from './LandingStage';
 import { NextPage } from './NextPage';
 
@@ -9,12 +11,12 @@ const TITLE_WORDS = ['موقع', 'تيم', 'حمثلاح'];
 
 const FACEBOOK_GROUP = 'https://www.facebook.com/share/g/19j9KEgPSD/?mibextid=wwXIfr';
 
-const NOTES: { label: string; r: number; delay: number }[] = [
-  { label: 'مسابقات', r: -4, delay: 0 },
-  { label: 'ألعاب', r: 3, delay: 0.4 },
-  { label: 'ع السريع', r: -2, delay: 0.8 },
-  { label: 'نصايح', r: 4, delay: 1.2 },
-  { label: 'فيديوهات تحفيزية', r: -3, delay: 1.6 },
+const NOTES: { section: Section; r: number; delay: number }[] = [
+  { section: SECTIONS.contests, r: -4, delay: 0 },
+  { section: SECTIONS.games, r: 3, delay: 0.4 },
+  { section: SECTIONS.quick, r: -2, delay: 0.8 },
+  { section: SECTIONS.tips, r: 4, delay: 1.2 },
+  { section: SECTIONS.videos, r: -3, delay: 1.6 },
 ];
 
 const BIRDS: { d: string; origin: string; dur: number }[] = [
@@ -140,8 +142,9 @@ export function Landing() {
           </svg>
           <div className="hm-notes">
             {NOTES.map((n, i) => (
-              <span
-                key={n.label}
+              <SectionLink
+                key={n.section.label}
+                section={n.section}
                 className="note"
                 style={
                   {
@@ -153,8 +156,8 @@ export function Landing() {
                 }
               >
                 <span className="pin" />
-                {n.label}
-              </span>
+                {n.section.label}
+              </SectionLink>
             ))}
           </div>
         </div>

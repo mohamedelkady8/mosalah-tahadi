@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
 
 interface WheelItem {
@@ -32,6 +32,33 @@ export function Wheel() {
   const [spun, setSpun] = useState(false);
   const [result, setResult] = useState<number | null>(null);
   const angleRef = useRef(0);
+  const wheelRef = useRef<HTMLDivElement>(null);
+  const pointerRef = useRef<SVGSVGElement>(null);
+  const tickFrame = useRef(0);
+
+  useEffect(() => () => cancelAnimationFrame(tickFrame.current), []);
+
+  /** Flicks the pointer every time a segment edge passes under it while the wheel turns. */
+  function tickPointer(until: number) {
+    const wheel = wheelRef.current;
+    const pointer = pointerRef.current;
+    if (!wheel || !pointer) return;
+    let last = -1;
+    const frame = () => {
+      const { a, b } = new DOMMatrixReadOnly(getComputedStyle(wheel).transform);
+      const seg = Math.floor(((((Math.atan2(b, a) * 180) / Math.PI) % 360) + 360) % 360 / STEP);
+      if (last !== -1 && seg !== last) {
+        pointer.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(-18deg)' }, { transform: 'rotate(0deg)' }], {
+          duration: 180,
+          easing: 'ease-out',
+        });
+      }
+      last = seg;
+      if (performance.now() < until) tickFrame.current = requestAnimationFrame(frame);
+    };
+    cancelAnimationFrame(tickFrame.current);
+    tickFrame.current = requestAnimationFrame(frame);
+  }
 
   function spin() {
     if (spinning) return;
@@ -43,6 +70,7 @@ export function Wheel() {
     angleRef.current += 360 * 5 + ((target - cur + 360) % 360);
     setAngle(angleRef.current);
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce) tickPointer(performance.now() + 4300);
     setTimeout(
       () => {
         setSpinning(false);
@@ -56,7 +84,7 @@ export function Wheel() {
   const picked = result === null ? null : ITEMS[result];
 
   return (
-    <section className="wheel-sec" aria-labelledby="wheelTitle">
+    <section className="wheel-sec" aria-labelledby="wheelTitle" data-reveal="">
       <div className="wheel-text">
         <h2 id="wheelTitle">يلا نبدأ</h2>
         <p>مش عارف تبدأ منين؟ لف العجلة، وشوف هتبدأ بإيه النهارده.</p>
@@ -89,14 +117,16 @@ export function Wheel() {
         </button>
       </div>
       <div className="wheel-box">
-        <svg aria-hidden="true" viewBox="0 0 40 34" className="pointer">
+        <svg ref={pointerRef} aria-hidden="true" viewBox="0 0 40 34" className="pointer">
           <path d="M20 34 L2 2 L38 2 Z" fill="#E8C46F" stroke="#2E2E30" strokeWidth="2" strokeLinejoin="round" />
         </svg>
         <div
+          ref={wheelRef}
           className="wheel"
           role="img"
           aria-label={`عجلة فيها: ${ITEMS.map((i) => i.label).join('، ')}`}
           style={{ background: BACKGROUND, transform: `rotate(${angle}deg)` }}
+          onClick={spin}
         >
           {ITEMS.map((it, i) => (
             <span
@@ -111,9 +141,9 @@ export function Wheel() {
             </span>
           ))}
         </div>
-        <span className="hub" aria-hidden="true">
+        <button type="button" className="hub" aria-hidden="true" tabIndex={-1} onClick={spin} disabled={spinning}>
           لف
-        </span>
+        </button>
       </div>
     </section>
   );

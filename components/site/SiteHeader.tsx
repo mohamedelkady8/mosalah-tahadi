@@ -1,16 +1,17 @@
 import Link from 'next/link';
 import { getSession } from '@/lib/data';
 import { firstName } from '@/lib/format';
+import { TransitionLink } from '@/components/motion/PageTransition';
 import { ChartIcon, UserIcon } from '@/components/ui/icons';
 
 export function BackLink({ href, label = 'رجوع' }: { href: string; label?: string }) {
   return (
-    <Link href={href} className="back">
+    <TransitionLink href={href} dir="down" className="back">
       <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2E2E30" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 6 L15 12 L9 18" />
       </svg>
       {label}
-    </Link>
+    </TransitionLink>
   );
 }
 
@@ -42,10 +43,10 @@ export async function HeaderActions({ children }: { children?: React.ReactNode }
 
 export function Logo({ height = 52 }: { height?: number }) {
   return (
-    <Link href="/" aria-label="الصفحة الرئيسية" style={{ display: 'block' }}>
+    <TransitionLink href="/" dir="down" aria-label="الصفحة الرئيسية" style={{ display: 'block' }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/assets/logo.svg" alt="محمد صلاح" style={{ height, width: 'auto', display: 'block' }} />
-    </Link>
+    </TransitionLink>
   );
 }
 

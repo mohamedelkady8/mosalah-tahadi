@@ -1,8 +1,11 @@
-import Link from 'next/link';
-import type { CSSProperties } from 'react';
+import { Fragment, type CSSProperties } from 'react';
 import { HeaderActions } from '@/components/site/SiteHeader';
+import { LandingStage } from './LandingStage';
+import { NextPage } from './NextPage';
 
 const STAR_PATH = 'M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0 Z';
+
+const TITLE_WORDS = ['موقع', 'تيم', 'حمثلاح'];
 
 const NOTES: { label: string; r: number; delay: number }[] = [
   { label: 'مسابقات', r: -4, delay: 0 },
@@ -22,7 +25,7 @@ const BIRDS: { d: string; origin: string; dur: number }[] = [
 
 export function Landing() {
   return (
-    <div dir="rtl" className="hm-root">
+    <LandingStage>
       <svg aria-hidden="true" className="hm-grain">
         <filter id="hmGrain">
           <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={2} stitchTiles="stitch" />
@@ -87,8 +90,11 @@ export function Landing() {
       </header>
 
       <main className="hm-main">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/mr-salah.webp" alt="مستر محمد صلاح" className="hm-teacher" />
+        <div className="hm-hero">
+          <span aria-hidden="true" className="hm-sun" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/mr-salah.webp" alt="مستر محمد صلاح" className="hm-teacher" />
+        </div>
 
         <div aria-hidden="true" className="hm-stars">
           <svg viewBox="0 0 24 24" style={{ top: -40, right: '6%', width: 30, height: 30, animation: 'hmTwinkle 2.6s ease-in-out infinite' }}>
@@ -102,7 +108,14 @@ export function Landing() {
           </svg>
         </div>
         <h1 className="hm-title" style={{ filter: 'url(#hmRough)' }}>
-          موقع تيم حمثلاح
+          {TITLE_WORDS.map((word, i) => (
+            <Fragment key={word}>
+              {i > 0 && ' '}
+              <span className="hm-w" style={{ '--i': i } as CSSProperties}>
+                {word}
+              </span>
+            </Fragment>
+          ))}
         </h1>
         <svg aria-hidden="true" width="0" height="0" style={{ position: 'absolute' }}>
           <filter id="hmRough">
@@ -124,11 +137,18 @@ export function Landing() {
             </g>
           </svg>
           <div className="hm-notes">
-            {NOTES.map((n) => (
+            {NOTES.map((n, i) => (
               <span
                 key={n.label}
                 className="note"
-                style={{ '--r': `${n.r}deg`, transform: `rotate(${n.r}deg)`, animationDelay: `${n.delay}s` } as CSSProperties}
+                style={
+                  {
+                    '--r': `${n.r}deg`,
+                    '--drop': `${(i * 0.16).toFixed(2)}s`,
+                    '--sway': `${n.delay}s`,
+                    transform: `rotate(${n.r}deg)`,
+                  } as CSSProperties
+                }
               >
                 <span className="pin" />
                 {n.label}
@@ -149,17 +169,29 @@ export function Landing() {
       <div aria-hidden="true" className="hm-road">
         <div className="hm-road-edge" />
         <div className="hm-road-line" />
+        <div className="hm-bus">
+          <svg viewBox="0 0 132 64">
+            <g className="hm-bus-body" stroke="#2E2E30" strokeLinejoin="round">
+              <path d="M14 10 H118 Q126 10 126 18 V48 H6 V26 Q6 10 14 10 Z" fill="#E8C46F" strokeWidth="3" />
+              <path d="M11 27 Q11 17 19 17 H28 V32 H11 Z" fill="#F4E6CF" strokeWidth="2.5" />
+              {[36, 60, 84].map((x) => (
+                <rect key={x} x={x} y="17" width="18" height="15" rx="2" fill="#F4E6CF" strokeWidth="2.5" />
+              ))}
+              <rect x="108" y="17" width="12" height="15" rx="2" fill="#F4E6CF" strokeWidth="2.5" />
+              <path d="M6 38 H126" fill="none" strokeWidth="2.5" />
+              <circle cx="12" cy="43" r="2.6" fill="#FFF3C9" strokeWidth="1.5" />
+            </g>
+            {[32, 100].map((cx) => (
+              <g key={cx} className="hm-bus-wheel">
+                <circle cx={cx} cy="50" r="9" fill="#2E2E30" />
+                <circle cx={cx} cy="50" r="3.6" fill="#F4E6CF" />
+                <path d={`M${cx} 42.5 V46`} stroke="#F4E6CF" strokeWidth="2" strokeLinecap="round" />
+              </g>
+            ))}
+          </svg>
+        </div>
       </div>
-      <footer className="hm-foot">
-        <Link href="/grades" className="hm-next">
-          <span>الصفحة التالية</span>
-          <span aria-hidden="true" className="hm-next-ic">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 9 L12 15 L18 9" />
-            </svg>
-          </span>
-        </Link>
-      </footer>
-    </div>
+      <NextPage href="/grades" />
+    </LandingStage>
   );
 }

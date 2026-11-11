@@ -6,6 +6,7 @@ import FillBlankPlayer from './FillBlankPlayer';
 import MatchingPlayer from './MatchingPlayer';
 import McqPlayer from './McqPlayer';
 import MemoryPlayer from './MemoryPlayer';
+import PuzzlePlayer from './PuzzlePlayer';
 import ScramblePlayer from './ScramblePlayer';
 import TrueFalsePlayer from './TrueFalsePlayer';
 import WordSearchPlayer from './WordSearchPlayer';
@@ -20,4 +21,5 @@ export const PLAYERS: Record<GameType, ComponentType<PlayerProps<any, any>>> = {
   fill_blank: FillBlankPlayer,
   classify: ClassifyPlayer,
   word_search: WordSearchPlayer,
+  puzzle: PuzzlePlayer,
 };

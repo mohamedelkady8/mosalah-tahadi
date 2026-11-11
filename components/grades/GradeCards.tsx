@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { TransitionLink } from '@/components/motion/PageTransition';
 import { GradeIcon } from '@/components/ui/icons';
 import type { GradeWithTracks } from '@/lib/types';
 
@@ -6,10 +6,11 @@ export function GradeCards({ grades, myGradeId }: { grades: GradeWithTracks[]; m
   return (
     <div className="grid">
       {grades.map((g, i) => (
-        <Link
+        <TransitionLink
           key={g.id}
           href={`/grades/${g.slug}`}
           className="gp-card"
+          data-reveal=""
           style={{ animationDelay: `${(0.6 + i * 0.12).toFixed(2)}s` }}
         >
           <span className="shine-wrap" aria-hidden="true">
@@ -27,7 +28,7 @@ export function GradeCards({ grades, myGradeId }: { grades: GradeWithTracks[]; m
               <path d="M15 6 L9 12 L15 18" />
             </svg>
           </span>
-        </Link>
+        </TransitionLink>
       ))}
     </div>
   );

@@ -7,6 +7,7 @@ export const GAME_TYPES = [
   'fill_blank',
   'classify',
   'word_search',
+  'puzzle',
 ] as const;
 
 export type GameType = (typeof GAME_TYPES)[number];
@@ -44,4 +45,6 @@ export interface ScoreResult {
   review: ReviewItem[];
   /** Optional one-line summary, e.g. how many wrong flips in the memory game. */
   summary?: string;
+  /** Optional picture for the result screen, e.g. the finished puzzle. */
+  picture?: string;
 }

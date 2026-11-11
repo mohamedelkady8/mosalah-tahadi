@@ -6,6 +6,7 @@ import FillBlankEditor from './FillBlankEditor';
 import MatchingEditor from './MatchingEditor';
 import McqEditor from './McqEditor';
 import MemoryEditor from './MemoryEditor';
+import PuzzleEditor from './PuzzleEditor';
 import ScrambleEditor from './ScrambleEditor';
 import TrueFalseEditor from './TrueFalseEditor';
 import WordSearchEditor from './WordSearchEditor';
@@ -20,4 +21,5 @@ export const EDITORS: Record<GameType, ComponentType<EditorProps<any>>> = {
   fill_blank: FillBlankEditor,
   classify: ClassifyEditor,
   word_search: WordSearchEditor,
+  puzzle: PuzzleEditor,
 };

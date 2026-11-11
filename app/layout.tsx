@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Sans_Arabic, Lalezar, Montserrat } from 'next/font/google';
+import { TransitionSettler } from '@/components/motion/PageTransition';
 import { ToastProvider } from '@/components/ui/Toast';
 import './globals.css';
 import './ui.css';
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl" className={`${lalezar.variable} ${plex.variable} ${montserrat.variable}`}>
       <body>
         <ToastProvider>{children}</ToastProvider>
+        <TransitionSettler />
       </body>
     </html>
   );

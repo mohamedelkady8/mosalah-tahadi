@@ -184,7 +184,11 @@ export default function GameShell({
                   <ClockIcon size={14} /> {num(settings.questionTimeSec)} ثانية لكل سؤال
                 </span>
               )}
-              {mode !== 'daily' && <span className="badge">{num(settings.pointsPerItem)} نقط لكل إجابة صح</span>}
+              {mode !== 'daily' && (
+                <span className="badge">
+                  {num(settings.pointsPerItem)} نقط لكل {def.pointsUnit ?? 'إجابة صح'}
+                </span>
+              )}
               {attemptsLeft !== null && (
                 <span className={`badge ${attemptsLeft ? 'badge-blue' : 'badge-bad'}`}>
                   {attemptsLeft ? `فاضلك ${attemptsText(attemptsLeft)} من ${num(settings.attemptsAllowed)}` : 'خلصت محاولاتك'}

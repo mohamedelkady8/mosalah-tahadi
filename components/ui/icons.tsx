@@ -111,6 +111,14 @@ const TYPE_PATHS: Record<string, React.ReactNode> = {
       <path d="M18 18 L21.5 21.5" />
     </>
   ),
+  puzzle: (
+    <>
+      <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" />
+      <path d="M14 8.5 C14 5.5 16 4 19 4 M17 2 L19.2 4 L17 6" />
+    </>
+  ),
 };
 
 export function GameTypeIcon({ type, size = 24, ...rest }: IconProps & { type: string }) {

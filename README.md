@@ -3,7 +3,7 @@
 An Arabic-language games platform for Mr. Salah's students, built with Next.js 15 (App Router) and Supabase. It keeps the look of the original Hamthalah site (same colors, fonts, wheel and grade cards) and adds:
 
 - Student accounts (phone number or email) with a grade (المرحلة) and a track (الشعبة: بكالوريا / ثانوية عامة).
-- 8 game types: multiple choice, true/false, matching, memory cards, sentence scramble, fill in the blank, classify, and word search.
+- 9 game types: multiple choice, true/false, matching, memory cards, sentence scramble, fill in the blank, classify, word search, and ركّبها (a picture puzzle where students swap pieces until the image is whole).
 - Points, a weekly and all-time leaderboard per grade and track, a daily question, streaks, badges and attempt history.
 - An admin dashboard to create games, target each one at specific grades and tracks, preview, publish, and manage students, grades, tracks and the homepage quotes.
 
@@ -13,10 +13,11 @@ The original static site is kept in `legacy/` for reference.
 
 ### 1. Create the database
 
-Create a project on [supabase.com](https://supabase.com), then open **SQL Editor** and run these two files in order:
+Create a project on [supabase.com](https://supabase.com), then open **SQL Editor** and run these files in order:
 
 1. `supabase/migrations/20261110000000_init.sql` (tables, security rules, functions, the `game-media` storage bucket)
-2. `supabase/seed.sql` (the 4 grades, 2 tracks, the homepage quotes and one sample game of each type)
+2. `supabase/migrations/20261111000000_puzzle.sql` (adds the ركّبها game type)
+3. `supabase/seed.sql` (the 4 grades, 2 tracks, the homepage quotes and sample games of every type)
 
 If you use the Supabase CLI instead: `npx supabase link --project-ref <ref>` then `npx supabase db push`, and run `seed.sql` in the SQL Editor.
 
@@ -80,7 +81,9 @@ Every game has a type, a title, a topic (نحو، بلاغة...), a difficulty, 
 
 A game is shown to students according to its targets. Each target is a grade plus either one track or all tracks. For example, "٣ ثانوي (all tracks)" plus "أولى ثانوي (بكالوريا)". Drafts are hidden from students, and a game can't be published without valid content and at least one target.
 
-All editors except classify and word search have a bulk import box that shows an example of its format. For multiple choice, write the question on the first line and one option per line under it. Put `*` before the correct option and `=` before an optional explanation, and leave a blank line between questions.
+All editors except classify, word search and ركّبها have a bulk import box that shows an example of its format. For multiple choice, write the question on the first line and one option per line under it. Put `*` before the correct option and `=` before an optional explanation, and leave a blank line between questions.
+
+For ركّبها, upload any picture and pick one of four difficulties (the grid follows the picture's shape, e.g. 2×4 up to 4×8 for a tall poster) or set the rows and columns yourself. Each piece is worth the game's points. Solving it in the fewest possible swaps, plus a few spare moves, gives full marks. Every extra swap takes a little off, down to 30% for any finished picture.
 
 ### Scores, points and the leaderboard
 
@@ -109,11 +112,11 @@ The correct answers are part of the game data sent to the browser, so the game c
 
 ```
 app/                 routes (site pages in app/(site), dashboard in app/admin)
-components/games/    game shell, result screen, players and editors for the 8 types
+components/games/    game shell, result screen, players and editors for the 9 types
 components/admin/    dashboard components (game form, managers, tables)
 lib/games/           game registry: schemas, scoring and defaults per type
 lib/actions/         server actions (auth, play, admin)
-supabase/            migration, seed and local CLI config
+supabase/            migrations, seed and local CLI config
 legacy/              the original static site
 ```
 

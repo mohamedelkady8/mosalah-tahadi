@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { GradeCards } from '@/components/grades/GradeCards';
 import { Wheel } from '@/components/grades/Wheel';
+import { RevealOnScroll } from '@/components/motion/RevealOnScroll';
 import { SitePage } from '@/components/site/SiteHeader';
 import { QuoteIcon } from '@/components/ui/icons';
 import { getCatalog, getQuoteOfDay, getSession } from '@/lib/data';
@@ -29,6 +30,7 @@ export default async function GradesPage() {
       </div>
       <GradeCards grades={grades} myGradeId={session.profile?.grade_id} />
       <Wheel />
+      <RevealOnScroll />
     </SitePage>
   );
 }

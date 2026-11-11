@@ -4,6 +4,7 @@ import { fillBlankDef } from './defs/fillBlank';
 import { matchingDef } from './defs/matching';
 import { mcqDef } from './defs/mcq';
 import { memoryDef } from './defs/memory';
+import { puzzleDef } from './defs/puzzle';
 import { scrambleDef } from './defs/scramble';
 import { trueFalseDef } from './defs/trueFalse';
 import { wordSearchDef } from './defs/wordSearch';
@@ -22,6 +23,7 @@ export const GAME_DEFS: Record<GameType, AnyGameDef> = {
   fill_blank: fillBlankDef,
   classify: classifyDef,
   word_search: wordSearchDef,
+  puzzle: puzzleDef,
 };
 
 export const GAME_TYPE_LIST = GAME_TYPES.map((t) => GAME_DEFS[t]);

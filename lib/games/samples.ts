@@ -517,6 +517,60 @@ export const SAMPLE_GAMES: PlayableGame[] = [
       ],
       "directions": "easy"
     }
+  },
+  {
+    "id": "sample-puzzle-magdak",
+    "slug": "puzzle-magdak",
+    "title": "ركّبها: اصنع مجدك بيدك",
+    "description": "بدّل القطع لحد ما رسمة «اصنع مجدك بيدك» تتركب. ٨ قطع بس، وريني هتخلّصها في كام حركة!",
+    "type": "puzzle",
+    "topic": "تحفيز",
+    "difficulty": 1,
+    "item_count": 8,
+    "cover_url": null,
+    "settings": {
+      "shuffle": true,
+      "timeLimitSec": 0,
+      "pointsPerItem": 10,
+      "attemptsAllowed": 0,
+      "questionTimeSec": 0,
+      "showExplanations": true
+    },
+    "content": {
+      "image": "/assets/poster-asna3-magdak.jpg",
+      "width": 709,
+      "height": 1512,
+      "cols": 2,
+      "rows": 4,
+      "caption": "اصنع مجدك بيدك"
+    }
+  },
+  {
+    "id": "sample-puzzle-magdak-hard",
+    "slug": "puzzle-magdak-hard",
+    "title": "ركّبها الصعبة: اصنع مجدك بيدك",
+    "description": "نفس الرسمة بس متقطّعة ١٨ قطعة. عايزة تركيز وصبر!",
+    "type": "puzzle",
+    "topic": "تحفيز",
+    "difficulty": 3,
+    "item_count": 18,
+    "cover_url": null,
+    "settings": {
+      "shuffle": true,
+      "timeLimitSec": 0,
+      "pointsPerItem": 5,
+      "attemptsAllowed": 0,
+      "questionTimeSec": 0,
+      "showExplanations": true
+    },
+    "content": {
+      "image": "/assets/poster-asna3-magdak.jpg",
+      "width": 709,
+      "height": 1512,
+      "cols": 3,
+      "rows": 6,
+      "caption": "اصنع مجدك بيدك"
+    }
   }
 ];
 

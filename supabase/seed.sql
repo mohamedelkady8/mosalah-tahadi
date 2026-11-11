@@ -61,7 +61,7 @@ select q.text, q.ord
   ]) with ordinality as q(text, ord)
  where not exists (select 1 from public.quotes);
 
--- One sample game of each type, published for every grade
+-- Sample games covering every type, published for every grade
 insert into public.games (slug, title, description, type, topic, difficulty, status, item_count, settings, content) values
 (
   'sample-nahw-mcq',
@@ -184,6 +184,22 @@ insert into public.games (slug, title, description, type, topic, difficulty, sta
   'word_search', 'بلاغة', 1, 'published', 7,
   '{"pointsPerItem":10,"timeLimitSec":240,"questionTimeSec":0,"shuffle":true,"showExplanations":true,"attemptsAllowed":0}',
   $json${"size":10,"directions":"easy","words":["تشبيه","استعارة","كناية","طباق","مقابلة","جناس","سجع"]}$json$
+),
+(
+  'sample-puzzle-magdak',
+  'ركّبها: اصنع مجدك بيدك',
+  'بدّل القطع لحد ما رسمة «اصنع مجدك بيدك» تتركب. ٨ قطع بس، وريني هتخلّصها في كام حركة!',
+  'puzzle', 'تحفيز', 1, 'published', 8,
+  '{"pointsPerItem":10,"timeLimitSec":0,"questionTimeSec":0,"shuffle":true,"showExplanations":true,"attemptsAllowed":0}',
+  $json${"image":"/assets/poster-asna3-magdak.jpg","width":709,"height":1512,"cols":2,"rows":4,"caption":"اصنع مجدك بيدك"}$json$
+),
+(
+  'sample-puzzle-magdak-hard',
+  'ركّبها الصعبة: اصنع مجدك بيدك',
+  'نفس الرسمة بس متقطّعة ١٨ قطعة. عايزة تركيز وصبر!',
+  'puzzle', 'تحفيز', 3, 'published', 18,
+  '{"pointsPerItem":5,"timeLimitSec":0,"questionTimeSec":0,"shuffle":true,"showExplanations":true,"attemptsAllowed":0}',
+  $json${"image":"/assets/poster-asna3-magdak.jpg","width":709,"height":1512,"cols":3,"rows":6,"caption":"اصنع مجدك بيدك"}$json$
 )
 on conflict (slug) do nothing;
 

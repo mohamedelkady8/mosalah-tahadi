@@ -400,7 +400,7 @@ export function GameForm({
             <h2>الإعدادات</h2>
             <div className="field-row">
               <div className="field">
-                <label htmlFor="g-points">نقط كل إجابة صح</label>
+                <label htmlFor="g-points">نقط كل {def.pointsUnit ?? 'إجابة صح'}</label>
                 <select
                   id="g-points"
                   className="select"
@@ -462,20 +462,26 @@ export function GameForm({
                 </select>
               </div>
             </div>
-            <div className="row" style={{ gap: 18 }}>
-              <label className="check">
-                <input type="checkbox" checked={settings.shuffle} onChange={(e) => setSettings({ ...settings, shuffle: e.target.checked })} />
-                رتّب الأسئلة عشوائي كل مرة
-              </label>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={settings.showExplanations}
-                  onChange={(e) => setSettings({ ...settings, showExplanations: e.target.checked })}
-                />
-                اعرض الشرح بعد كل إجابة
-              </label>
-            </div>
+            {(def.usesShuffle !== false || def.usesExplanations !== false) && (
+              <div className="row" style={{ gap: 18 }}>
+                {def.usesShuffle !== false && (
+                  <label className="check">
+                    <input type="checkbox" checked={settings.shuffle} onChange={(e) => setSettings({ ...settings, shuffle: e.target.checked })} />
+                    رتّب الأسئلة عشوائي كل مرة
+                  </label>
+                )}
+                {def.usesExplanations !== false && (
+                  <label className="check">
+                    <input
+                      type="checkbox"
+                      checked={settings.showExplanations}
+                      onChange={(e) => setSettings({ ...settings, showExplanations: e.target.checked })}
+                    />
+                    اعرض الشرح بعد كل إجابة
+                  </label>
+                )}
+              </div>
+            )}
           </section>
         </div>
 

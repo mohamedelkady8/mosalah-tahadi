@@ -105,6 +105,10 @@ export function ResultView({
         <p className="sum">
           {result.summary ?? `جاوبت ${num(result.correctCount)} من ${num(result.totalCount)} صح`}
         </p>
+        {result.picture && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="gm-result-pic a-pop" src={result.picture} alt="الصورة بعد ما اتركّبت" />
+        )}
 
         <div className="gm-kpis">
           <div className="gm-kpi">

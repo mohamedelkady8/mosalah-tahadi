@@ -26,6 +26,11 @@ export interface GameDef<C = unknown, A = unknown> {
   score(content: C, answers: A, settings: GameSettings): ScoreResult;
   /** Whether "time per question" applies to this type. */
   usesQuestionTimer?: boolean;
+  /** Set to false when the "shuffle" and "show explanations" settings mean nothing for this type. */
+  usesShuffle?: boolean;
+  usesExplanations?: boolean;
+  /** What one item's points are for, e.g. "قطعة". Defaults to "إجابة صح". */
+  pointsUnit?: string;
 }
 
 export function makeResult(

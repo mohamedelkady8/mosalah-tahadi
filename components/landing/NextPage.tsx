@@ -134,7 +134,7 @@ export function NextPage({ href, label = 'الصفحة التالية' }: { href
       },
       { threshold: 0.6 },
     );
-    observer.observe(link);
+    observer.observe(link.querySelector('.hm-next-ic') ?? link);
     const introTimer = window.setTimeout(
       () => {
         introDone = true;
@@ -180,18 +180,32 @@ export function NextPage({ href, label = 'الصفحة التالية' }: { href
           goRef.current();
         }}
       >
-        <span>{label}</span>
-        <span aria-hidden="true" className="hm-next-ic">
-          <svg viewBox="0 0 64 64" className="hm-ring">
-            <circle cx="32" cy="32" r="29" className="hm-ring-track" />
-            <circle cx="32" cy="32" r="29" className="hm-ring-fill" pathLength={100} />
+        <span aria-hidden="true" className="hm-page hm-page-3" />
+        <span aria-hidden="true" className="hm-page hm-page-2" />
+        <span className="hm-page hm-page-1">
+          <svg aria-hidden="true" viewBox="0 0 24 60" className="hm-clip">
+            <path d="M8 46 V14 a4 4 0 0 1 8 0 V50 a6 6 0 0 1 -12 0 V10 a8 8 0 0 1 16 0 V44" />
           </svg>
-          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9 L12 15 L18 9" />
-          </svg>
-        </span>
-        <span aria-hidden="true" key={phase} className="hm-next-hint">
-          {HINTS[phase]}
+          <span className="hm-next-text">
+            <span className="hm-next-label">
+              {label}
+              <svg aria-hidden="true" viewBox="0 0 160 14" preserveAspectRatio="none" className="hm-doodle">
+                <path d="M156 8 C 140 4, 120 0, 90 6 C 60 12, 30 3, 4 9" pathLength={100} />
+              </svg>
+            </span>
+            <span aria-hidden="true" key={phase} className="hm-next-hint">
+              {HINTS[phase]}
+            </span>
+          </span>
+          <span aria-hidden="true" className="hm-next-ic">
+            <svg viewBox="0 0 64 64" className="hm-ring">
+              <circle cx="32" cy="32" r="29" className="hm-ring-track" />
+              <circle cx="32" cy="32" r="29" className="hm-ring-fill" pathLength={100} />
+            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9 L12 15 L18 9" />
+            </svg>
+          </span>
         </span>
       </Link>
 

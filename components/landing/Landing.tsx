@@ -7,6 +7,8 @@ const STAR_PATH = 'M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C
 
 const TITLE_WORDS = ['موقع', 'تيم', 'حمثلاح'];
 
+const FACEBOOK_GROUP = 'https://www.facebook.com/share/g/19j9KEgPSD/?mibextid=wwXIfr';
+
 const NOTES: { label: string; r: number; delay: number }[] = [
   { label: 'مسابقات', r: -4, delay: 0 },
   { label: 'ألعاب', r: 3, delay: 0.4 },
@@ -158,39 +160,18 @@ export function Landing() {
         </div>
 
         <p className="hm-tagline">هنكون جزء من يومكوا</p>
-        <a href="https://tahadi-team-hamthalah.vercel.app/" target="_blank" rel="noopener" className="hm-cta">
-          ابدأ تحدي اليوم
-          <svg aria-hidden="true" viewBox="0 0 24 24" style={{ width: 20, height: 20 }} fill="none" stroke="#2E2E30" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 6 L9 12 L15 18" />
+        <a href={FACEBOOK_GROUP} target="_blank" rel="noopener noreferrer" className="hm-cta">
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="hm-fb">
+            <circle cx="12" cy="12" r="11.6" fill="#FFFFFF" />
+            <path
+              fill="#1877F2"
+              d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"
+            />
           </svg>
+          شاركنا في جروب الفيس
         </a>
       </main>
 
-      <div aria-hidden="true" className="hm-road">
-        <div className="hm-road-edge" />
-        <div className="hm-road-line" />
-        <div className="hm-bus">
-          <svg viewBox="0 0 132 64">
-            <g className="hm-bus-body" stroke="#2E2E30" strokeLinejoin="round">
-              <path d="M14 10 H118 Q126 10 126 18 V48 H6 V26 Q6 10 14 10 Z" fill="#E8C46F" strokeWidth="3" />
-              <path d="M11 27 Q11 17 19 17 H28 V32 H11 Z" fill="#F4E6CF" strokeWidth="2.5" />
-              {[36, 60, 84].map((x) => (
-                <rect key={x} x={x} y="17" width="18" height="15" rx="2" fill="#F4E6CF" strokeWidth="2.5" />
-              ))}
-              <rect x="108" y="17" width="12" height="15" rx="2" fill="#F4E6CF" strokeWidth="2.5" />
-              <path d="M6 38 H126" fill="none" strokeWidth="2.5" />
-              <circle cx="12" cy="43" r="2.6" fill="#FFF3C9" strokeWidth="1.5" />
-            </g>
-            {[32, 100].map((cx) => (
-              <g key={cx} className="hm-bus-wheel">
-                <circle cx={cx} cy="50" r="9" fill="#2E2E30" />
-                <circle cx={cx} cy="50" r="3.6" fill="#F4E6CF" />
-                <path d={`M${cx} 42.5 V46`} stroke="#F4E6CF" strokeWidth="2" strokeLinecap="round" />
-              </g>
-            ))}
-          </svg>
-        </div>
-      </div>
       <NextPage href="/grades" />
     </LandingStage>
   );

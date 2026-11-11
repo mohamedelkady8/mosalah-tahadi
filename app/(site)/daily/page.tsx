@@ -7,14 +7,13 @@ import { getCatalog, getSession, gradeName } from '@/lib/data';
 import { cairoDayKey, formatDayKey } from '@/lib/format';
 import { loadDailyQuestions } from '@/lib/hub';
 import { FACEBOOK_GROUP, sectionBack } from '@/lib/sections';
-import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'سؤال اليوم' };
 
 /** The question the team posted for today. Students answer it in the Facebook group, not here. */
 export default async function DailyPage() {
-  const [{ profile }, catalog, supabase] = await Promise.all([getSession(), getCatalog(), createClient()]);
-  const { today, past } = await loadDailyQuestions(supabase, profile);
+  const [{ profile }, catalog] = await Promise.all([getSession(), getCatalog()]);
+  const { today, past } = await loadDailyQuestions(profile);
 
   return (
     <SitePage back={sectionBack(profile, '/admin/daily')}>
@@ -29,7 +28,7 @@ export default async function DailyPage() {
           </span>
           {today.image_url && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="dq-img" src={today.image_url} alt="" />
+            <img className="dq-img" src={today.image_url} alt="" decoding="async" />
           )}
           <p className="dq-text">
             <RichText text={today.question} />

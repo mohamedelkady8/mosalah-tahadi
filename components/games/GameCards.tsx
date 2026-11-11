@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ChevronEnd, GameTypeIcon, StarIcon } from '@/components/ui/icons';
 import { DIFFICULTY_LABELS, num, percent } from '@/lib/format';
-import { getDef, itemsLabel } from '@/lib/games/registry';
+import { itemsLabel, typeLabel } from '@/lib/games/meta';
 import type { GameType } from '@/lib/games/types';
 
 export interface GameCardData {
@@ -33,7 +33,6 @@ export function GameCards({
   return (
     <div className="gm-cards">
       {games.map((g) => {
-        const def = getDef(g.type);
         const b = best?.[g.id];
         const p = b ? percent(b.score, b.max) : 0;
         return (
@@ -41,14 +40,14 @@ export function GameCards({
             <span className={`gicon${g.cover_url ? ' has-cover' : ''}`} aria-hidden="true">
               {g.cover_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={g.cover_url} alt="" />
+                <img src={g.cover_url} alt="" loading="lazy" decoding="async" />
               ) : (
                 <GameTypeIcon type={g.type} />
               )}
             </span>
             <span className="g-txt">
               <span className="g-k">
-                {def.label}
+                {typeLabel(g.type)}
                 {b ? (
                   <span className={`gm-best${p >= 100 ? ' top' : ''}`} title="أحسن نتيجة ليك">
                     <StarIcon size={12} filled /> {num(p)}٪

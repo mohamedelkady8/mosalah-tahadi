@@ -92,7 +92,7 @@ export function Landing({ nextHref }: { nextHref: string }) {
 
       <header className="hm-head">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/logo.svg" alt="محمد صلاح" className="hm-logo" />
+        <img src="/assets/logo.svg" alt="محمد صلاح" className="hm-logo" width={1335} height={400} />
         <HeaderActions />
       </header>
 
@@ -100,7 +100,7 @@ export function Landing({ nextHref }: { nextHref: string }) {
         <div className="hm-hero">
           <span aria-hidden="true" className="hm-sun" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/mr-salah.webp" alt="مستر محمد صلاح" className="hm-teacher" fetchPriority="high" />
+          <img src="/assets/mr-salah.webp" alt="مستر محمد صلاح" className="hm-teacher" width={900} height={743} fetchPriority="high" decoding="async" />
         </div>
 
         <div aria-hidden="true" className="hm-stars">

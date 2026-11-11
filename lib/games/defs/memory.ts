@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { type GameDef } from '../def';
+import { GAME_META } from '../meta';
 import { num } from '../../format';
 import { mulberry32, shuffleWith, uid } from '../random';
 
@@ -46,11 +47,11 @@ export function newMemoryPair(): MemoryPair {
 
 export const memoryDef: GameDef<MemoryContent, MemoryAnswers> = {
   type: 'memory',
-  label: 'كروت الذاكرة',
+  label: GAME_META.memory.label,
   description: 'كروت مقلوبة، والطالب يلاقي كل كارت مع اللي يناسبه بأقل محاولات.',
   howTo: 'اقلب كارتين في كل مرة ولاقي الكروت اللي بتكمّل بعض. كل ما تخلص بمحاولات أقل، درجتك تعلى.',
   accent: '#E8C46F',
-  itemForms: { one: 'زوج واحد', two: 'زوجين', few: 'أزواج', many: 'زوج' },
+  itemForms: GAME_META.memory.itemForms,
   contentSchema: memoryContent,
   answersSchema: memoryAnswers,
   defaultContent: () => ({ pairs: [newMemoryPair(), newMemoryPair(), newMemoryPair()] }),

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { makeResult, type GameDef } from '../def';
+import { GAME_META } from '../meta';
 import { normalizeAnswer } from '../text';
 import { generateWordSearch, selectionSpells, wordLetters } from '../wordsearch';
 
@@ -36,11 +37,11 @@ export type WordSearchAnswers = z.output<typeof wordSearchAnswers>;
 
 export const wordSearchDef: GameDef<WordSearchContent, WordSearchAnswers> = {
   type: 'word_search',
-  label: 'دوّر على الكلمة',
+  label: GAME_META.word_search.label,
   description: 'جدول حروف فيه كلمات مستخبية، والطالب يدوّر عليها.',
   howTo: 'اسحب صباعك على الحروف من أول الكلمة لآخرها، أو دوس على أول حرف وبعدين آخر حرف.',
   accent: '#E8C46F',
-  itemForms: { one: 'كلمة واحدة', two: 'كلمتين', few: 'كلمات', many: 'كلمة' },
+  itemForms: GAME_META.word_search.itemForms,
   contentSchema: wordSearchContent,
   answersSchema: wordSearchAnswers,
   defaultContent: () => ({ words: ['', '', ''], size: 10, directions: 'easy' }),

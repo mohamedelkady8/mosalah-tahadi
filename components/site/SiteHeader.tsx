@@ -52,7 +52,7 @@ export function Logo() {
   return (
     <TransitionLink href="/" dir="down" aria-label="الصفحة الرئيسية" style={{ display: 'block', flex: 'none' }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/assets/logo.svg" alt="محمد صلاح" className="gp-logo" />
+      <img src="/assets/logo.svg" alt="محمد صلاح" className="gp-logo" width={1335} height={400} />
     </TransitionLink>
   );
 }

@@ -19,7 +19,8 @@ Create a project on [supabase.com](https://supabase.com), then open **SQL Editor
 1. `supabase/migrations/20261110000000_init.sql` (tables, security rules, functions, the `game-media` storage bucket)
 2. `supabase/migrations/20261111000000_puzzle.sql` (adds the ركّبها game type)
 3. `supabase/migrations/20261112000000_hub.sql` (quizzes and contests, tips, videos, daily questions)
-4. `supabase/seed.sql` (the 4 grades, 2 tracks, the homepage quotes, sample games of every type, sample tips and one «ع السريع» quiz)
+4. `supabase/migrations/20261113000000_perf.sql` (indexes and faster functions for the wheel, ranks and the leaderboard)
+5. `supabase/seed.sql` (the 4 grades, 2 tracks, the homepage quotes, sample games of every type, sample tips and one «ع السريع» quiz)
 
 If you use the Supabase CLI instead: `npx supabase link --project-ref <ref>` then `npx supabase db push`, and run `seed.sql` in the SQL Editor.
 

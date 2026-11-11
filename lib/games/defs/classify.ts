@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { makeResult, type GameDef } from '../def';
+import { GAME_META } from '../meta';
 import { uid } from '../random';
 
 export const classifyContent = z
@@ -47,11 +48,11 @@ export function newClassifyItem(bucketId = ''): ClassifyItem {
 
 export const classifyDef: GameDef<ClassifyContent, ClassifyAnswers> = {
   type: 'classify',
-  label: 'صنّف',
+  label: GAME_META.classify.label,
   description: 'مجموعات وعناصر، والطالب يحط كل عنصر في مجموعته (مثلًا: فاعل / مفعول به / مبتدأ).',
   howTo: 'اسحب كل كارت للمجموعة الصح، أو دوس عليه وبعدين دوس على المجموعة.',
   accent: '#7A2A3A',
-  itemForms: { one: 'عنصر واحد', two: 'عنصرين', few: 'عناصر', many: 'عنصر' },
+  itemForms: GAME_META.classify.itemForms,
   contentSchema: classifyContent,
   answersSchema: classifyAnswers,
   defaultContent: () => {

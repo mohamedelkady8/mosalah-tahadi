@@ -43,7 +43,7 @@
 .ad-table tr:hover td{background:rgba(232,196,111,.1)}
 .ad-table .t-title{font-weight:700;color:var(--ink);text-decoration:none}
 .ad-table .t-title:hover{color:var(--wine)}
-.ad-table .t-sub{display:block;font-size:13px;color:#6A4438;font-weight:500}
+.ad-table .t-sub{display:block;font-size:13px;color:#6A4438;font-family:var(--font-plex-medium),var(--f-body);font-weight:500}
 .ad-table .t-actions{display:flex;gap:6px;justify-content:flex-end}
 .ad-table .num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ad-type{display:inline-flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap}
@@ -193,7 +193,7 @@
 .ad-dq-img{flex:none;width:84px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(46,46,48,.12)}
 .ad-dq-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .ad-dq-meta a.badge{text-decoration:none}
-.ad-dq-q{margin:0;line-height:1.8;font-weight:500;white-space:pre-line}
+.ad-dq-q{margin:0;line-height:1.8;font-family:var(--font-plex-medium),var(--f-body);font-weight:500;white-space:pre-line}
 
 @media (max-width:1100px){
   .ad-form{grid-template-columns:1fr}

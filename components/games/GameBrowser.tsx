@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { GameTypeIcon, GamepadIcon, SearchIcon } from '@/components/ui/icons';
 import { num } from '@/lib/format';
-import { getDef } from '@/lib/games/registry';
+import { typeLabel } from '@/lib/games/meta';
 import { normalizeAnswer } from '@/lib/games/text';
 import { GAME_TYPES, type GameType } from '@/lib/games/types';
 import { GameCards, type BestScore, type GameCardData } from './GameCards';
@@ -75,7 +75,7 @@ export function GameBrowser({ games, best }: { games: GameCardData[]; best: Reco
             {types.map((t) => (
               <button key={t} type="button" className={`chip${type === t ? ' on' : ''}`} aria-pressed={type === t} onClick={() => setType(t)}>
                 <GameTypeIcon type={t} size={15} />
-                {getDef(t).label}
+                {typeLabel(t)}
               </button>
             ))}
           </div>

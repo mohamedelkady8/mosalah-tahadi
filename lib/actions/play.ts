@@ -50,12 +50,10 @@ export async function submitAttempt(input: { gameId: string; answers: unknown; d
   if (!answers.success) return { ok: false, error: 'الإجابات وصلت ناقصة، جرّب تاني.' };
   const settings = parseSettings(game.settings, game.type);
 
-  const { count } = await supabase
-    .from('attempts')
-    .select('id', { count: 'exact', head: true })
-    .eq('game_id', game.id)
-    .eq('user_id', userId);
-  const used = count ?? 0;
+  // One read gives both how many attempts were used and the best score so far.
+  const { data: previous } = await supabase.from('attempts').select('score').eq('game_id', game.id).eq('user_id', userId).limit(1000);
+  const used = previous?.length ?? 0;
+  const bestBefore = (previous ?? []).reduce((max, a) => Math.max(max, a.score as number), 0);
   const allowed = contest ? 1 : settings.attemptsAllowed;
   if (allowed > 0 && used >= allowed && !isAdmin) {
     return {
@@ -100,17 +98,15 @@ export async function submitAttempt(input: { gameId: string; answers: unknown; d
     return { ok: false, error: 'معرفناش نحفظ نتيجتك، جرّب تاني.', retry: true };
   }
 
-  const [best, me] = await Promise.all([
-    supabase.from('attempts').select('score').eq('game_id', game.id).eq('user_id', userId).order('score', { ascending: false }).limit(1).maybeSingle(),
-    supabase.from('profiles').select('points').eq('id', userId).maybeSingle(),
-  ]);
+  // The insert trigger has already re-added the student's points.
+  const { data: me } = await supabase.from('profiles').select('points').eq('id', userId).maybeSingle();
 
   return {
     ok: true,
     result,
     saved: true,
-    best: best.data?.score ?? result.score,
+    best: Math.max(bestBefore, result.score),
     attemptsUsed: used + 1,
-    points: me.data?.points ?? null,
+    points: me?.points ?? null,
   };
 }

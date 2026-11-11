@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { type GameDef } from '../def';
+import { GAME_META } from '../meta';
 import { uid } from '../random';
 import { blankedText, blanksOf, normalizeAnswer } from '../text';
 
@@ -46,11 +47,11 @@ export function newFillItem(): FillItem {
 
 export const fillBlankDef: GameDef<FillContent, FillAnswers> = {
   type: 'fill_blank',
-  label: 'كمّل الفراغ',
+  label: GAME_META.fill_blank.label,
   description: 'جمل فيها فراغات، والطالب يكتب الإجابة أو يختارها من بنك الكلمات.',
   howTo: 'كمّل كل فراغ بالكلمة المناسبة، وبعدين دوس «تأكيد».',
   accent: '#1F6FB5',
-  itemForms: { one: 'جملة واحدة', two: 'جملتين', few: 'جمل', many: 'جملة' },
+  itemForms: GAME_META.fill_blank.itemForms,
   contentSchema: fillContent,
   answersSchema: fillAnswers,
   defaultContent: () => ({ mode: 'bank', ignoreDiacritics: true, items: [newFillItem()], distractors: [] }),

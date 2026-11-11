@@ -11,6 +11,7 @@ import { uid } from '@/lib/games/random';
 import { parseSettings } from '@/lib/games/settings';
 import { GAME_TYPES } from '@/lib/games/types';
 import { GAME_KINDS, KIND_INFO, kindOf } from '@/lib/kinds';
+import { refreshShared } from '@/lib/shared';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import type { Catalog } from '@/lib/types';
@@ -33,7 +34,9 @@ function firstIssue(error: z.ZodError): string {
   return /[\u0600-\u06FF]/.test(msg) ? msg : 'فيه بيانات مش مظبوطة.';
 }
 
+/** After an admin change: drop the cached shared data and every cached page, so students see it right away. */
 function refresh() {
+  refreshShared();
   revalidatePath('/', 'layout');
 }
 

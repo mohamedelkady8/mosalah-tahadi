@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { makeResult, NOT_ANSWERED, type GameDef } from '../def';
+import { GAME_META } from '../meta';
 import { uid } from '../random';
 import { graphemes, normalizeSpaces, words } from '../text';
 
@@ -58,11 +59,11 @@ export function newScrambleItem(): ScrambleItem {
 
 export const scrambleDef: GameDef<ScrambleContent, ScrambleAnswers> = {
   type: 'scramble',
-  label: 'رتّب',
+  label: GAME_META.scramble.label,
   description: 'كلمات جملة أو حروف كلمة متلخبطة، والطالب يرتبها صح.',
   howTo: 'دوس على القطع بالترتيب الصح عشان تكوّن الجملة، وتقدر تسحبها عشان تغيّر مكانها.',
   accent: '#F4E6CF',
-  itemForms: { one: 'جملة واحدة', two: 'جملتين', few: 'جمل', many: 'جملة' },
+  itemForms: GAME_META.scramble.itemForms,
   contentSchema: scrambleContent,
   answersSchema: scrambleAnswers,
   defaultContent: () => ({ mode: 'words', items: [newScrambleItem()] }),

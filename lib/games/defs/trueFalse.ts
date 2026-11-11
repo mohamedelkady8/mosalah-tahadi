@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { makeResult, NOT_ANSWERED, type GameDef } from '../def';
+import { GAME_META } from '../meta';
 import { uid } from '../random';
 
 export const tfContent = z.object({
@@ -32,11 +33,11 @@ export function newTfStatement(): TfStatement {
 
 export const trueFalseDef: GameDef<TfContent, TfAnswers> = {
   type: 'true_false',
-  label: 'صح ولا غلط',
+  label: GAME_META.true_false.label,
   description: 'جمل سريعة، والطالب يقرر صح ولا غلط قبل ما الوقت يخلص.',
   howTo: 'اقرا الجملة وقرّر بسرعة: صح ولا غلط؟',
   accent: '#1F6FB5',
-  itemForms: { one: 'جملة واحدة', two: 'جملتين', few: 'جمل', many: 'جملة' },
+  itemForms: GAME_META.true_false.itemForms,
   contentSchema: tfContent,
   answersSchema: tfAnswers,
   usesQuestionTimer: true,

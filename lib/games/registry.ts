@@ -9,7 +9,7 @@ import { scrambleDef } from './defs/scramble';
 import { trueFalseDef } from './defs/trueFalse';
 import { wordSearchDef } from './defs/wordSearch';
 import { GAME_TYPES, type GameType } from './types';
-import { countLabel, num } from '../format';
+import { num } from '../format';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyGameDef = GameDef<any, any>;
@@ -32,9 +32,7 @@ export function getDef(type: GameType): AnyGameDef {
   return GAME_DEFS[type];
 }
 
-export function itemsLabel(type: GameType, count: number): string {
-  return countLabel(count, GAME_DEFS[type].itemForms);
-}
+export { itemsLabel } from './meta';
 
 const PATH_NOUNS: Record<string, string> = {
   questions: 'السؤال',

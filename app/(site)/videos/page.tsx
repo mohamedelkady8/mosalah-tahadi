@@ -5,13 +5,12 @@ import { VideoIcon } from '@/components/ui/icons';
 import { getSession } from '@/lib/data';
 import { loadVideos } from '@/lib/hub';
 import { sectionBack } from '@/lib/sections';
-import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'فيديوهات تحفيزية' };
 
 export default async function VideosPage() {
-  const [{ profile }, supabase] = await Promise.all([getSession(), createClient()]);
-  const videos = await loadVideos(supabase, profile);
+  const { profile } = await getSession();
+  const videos = await loadVideos(profile);
 
   return (
     <SitePage back={sectionBack(profile, '/admin/videos')}>

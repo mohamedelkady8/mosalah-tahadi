@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { makeResult, NOT_ANSWERED, type GameDef } from '../def';
+import { GAME_META } from '../meta';
 import { uid } from '../random';
 
 const question = z
@@ -55,11 +56,11 @@ export function newMcqQuestion(): McqQuestion {
 
 export const mcqDef: GameDef<McqContent, McqAnswers> = {
   type: 'mcq',
-  label: 'اختيار من متعدد',
+  label: GAME_META.mcq.label,
   description: 'أسئلة بأكتر من اختيار، وبعد كل سؤال يظهر الشرح.',
   howTo: 'اختار الإجابة الصح قبل ما الوقت يخلص، وبعد كل سؤال هتعرف السبب.',
   accent: '#E8C46F',
-  itemForms: { one: 'سؤال واحد', two: 'سؤالين', few: 'أسئلة', many: 'سؤال' },
+  itemForms: GAME_META.mcq.itemForms,
   contentSchema: mcqContent,
   answersSchema: mcqAnswers,
   usesQuestionTimer: true,

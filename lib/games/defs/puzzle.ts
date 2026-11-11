@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { type CountForms, type GameDef } from '../def';
+import { GAME_META } from '../meta';
 import { countLabel, num } from '../../format';
 import { mulberry32, shuffleWith } from '../random';
 
@@ -8,7 +9,7 @@ export const MAX_PIECES = 48;
 /** The «اصنع مجدك بيدك» poster from the original ركّبها game. */
 export const PUZZLE_POSTER = { image: '/assets/poster-asna3-magdak.jpg', width: 709, height: 1512, caption: 'اصنع مجدك بيدك' };
 
-const PIECE_FORMS: CountForms = { one: 'قطعة واحدة', two: 'قطعتين', few: 'قطع', many: 'قطعة' };
+const PIECE_FORMS = GAME_META.puzzle.itemForms;
 const MOVE_FORMS: CountForms = { one: 'حركة واحدة', two: 'حركتين', few: 'حركات', many: 'حركة' };
 
 export const puzzleContent = z
@@ -90,7 +91,7 @@ export function fewestSwaps(order: readonly number[]): number {
 
 export const puzzleDef: GameDef<PuzzleContent, PuzzleAnswers> = {
   type: 'puzzle',
-  label: 'ركّبها',
+  label: GAME_META.puzzle.label,
   description: 'صورة متقطّعة ومتلخبطة، والطالب يبدّل القطع لحد ما الصورة ترجع زي ما كانت.',
   howTo: 'دوس على قطعة، وبعدين على القطعة اللي عايز تبدّلها بيها، لحد ما الصورة تتركب. كل ما تركّبها بحركات أقل، درجتك تعلى.',
   accent: '#7A2A3A',

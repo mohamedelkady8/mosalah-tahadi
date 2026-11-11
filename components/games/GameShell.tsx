@@ -8,7 +8,7 @@ import { clock, countLabel, DIFFICULTY_LABELS, durationText, num } from '@/lib/f
 import { getDef, itemsLabel } from '@/lib/games/registry';
 import { parseSettings } from '@/lib/games/settings';
 import type { ScoreResult } from '@/lib/games/types';
-import { PLAYERS } from './players';
+import { PLAYERS, preloadPlayer } from './players';
 import { ResultView, type Outcome } from './ResultView';
 import type { PlayableGame } from './types';
 
@@ -58,6 +58,11 @@ export default function GameShell({
   const limited = mode === 'play' && !stats?.unlimited && settings.attemptsAllowed > 0;
   const attemptsLeft = limited ? Math.max(0, settings.attemptsAllowed - attemptsUsed) : null;
   const canPlay = attemptsLeft === null || attemptsLeft > 0;
+
+  // The player's code is a separate download; fetch it while the student reads the start screen.
+  useEffect(() => {
+    preloadPlayer(game.type);
+  }, [game.type]);
 
   function start() {
     if (!canPlay) return;

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { makeResult, type GameDef } from '../def';
+import { GAME_META } from '../meta';
 import { uid } from '../random';
 import { normalizeAnswer } from '../text';
 
@@ -45,11 +46,11 @@ export function newPair(): MatchingPair {
 
 export const matchingDef: GameDef<MatchingContent, MatchingAnswers> = {
   type: 'matching',
-  label: 'وصّل',
+  label: GAME_META.matching.label,
   description: 'عمودين، والطالب يوصّل كل كلمة بمعناها أو بإعرابها.',
   howTo: 'دوس على كلمة من العمود الأول وبعدين على اللي تناسبها من العمود التاني، أو اسحبها عليها.',
   accent: '#7A2A3A',
-  itemForms: { one: 'زوج واحد', two: 'زوجين', few: 'أزواج', many: 'زوج' },
+  itemForms: GAME_META.matching.itemForms,
   contentSchema: matchingContent,
   answersSchema: matchingAnswers,
   defaultContent: () => ({ leftLabel: 'الكلمة', rightLabel: 'المعنى', pairs: [newPair(), newPair(), newPair()] }),

@@ -1,10 +1,11 @@
 /** Shrinks big photos before upload so games load fast on mobile data. GIFs are kept as they are. */
-export async function prepareImage(file: File, maxDim = 1600): Promise<Blob> {
+export async function prepareImage(file: File, maxDim = 1280): Promise<Blob> {
   if (!/^image\/(png|jpeg|webp)$/.test(file.type) || typeof createImageBitmap !== 'function') return file;
   const bitmap = await createImageBitmap(file).catch(() => null);
   if (!bitmap) return file;
   const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
-  if (scale === 1 && file.size < 900_000) {
+  // Small files that are already the right size go up untouched; anything heavier is re-saved as WebP.
+  if (scale === 1 && file.size < 150_000) {
     bitmap.close();
     return file;
   }

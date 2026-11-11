@@ -14,7 +14,8 @@ export function Countdown({ to, inline = false, prefix = 'فاضل', refresh = t
 
   useEffect(() => {
     const end = new Date(to).getTime();
-    let nextRefresh = end + 800;
+    // A few seconds of spread, so a whole class waiting for a contest doesn't hit the server in the same instant.
+    let nextRefresh = end + 800 + Math.random() * 2500;
     let tries = 0;
     const tick = () => {
       const now = Date.now();

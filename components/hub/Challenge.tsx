@@ -177,7 +177,7 @@ export function Challenge({ game, variant, preview = false, heading, audience, d
             <img src={game.cover_url} alt="" className="qz-cover" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src="/assets/mr-salah.webp" alt="" className="qz-teacher" />
+            <img src="/assets/mr-salah.webp" alt="" className="qz-teacher" width={900} height={743} decoding="async" />
           )}
         </div>
         <span className="qz-kicker">{contest ? 'مسابقة' : 'تحدّي'}</span>

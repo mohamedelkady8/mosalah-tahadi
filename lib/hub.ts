@@ -3,6 +3,7 @@ import { cairoDayKey } from '@/lib/format';
 import type { GameType } from '@/lib/games/types';
 import { contestPhase } from '@/lib/kinds';
 import type { SectionKey } from '@/lib/sections';
+import { sharedDailyQuestions, sharedTips, sharedVideos } from '@/lib/shared';
 import type { createClient } from '@/lib/supabase/server';
 import type { DailyQuestion, Profile, Tip, Video } from '@/lib/types';
 
@@ -10,78 +11,61 @@ type Client = Awaited<ReturnType<typeof createClient>>;
 
 /**
  * Tips, videos and daily questions with no grade are for everyone. Students get those plus their grade's;
- * admins and visitors get everything (visitors only reach tips and videos).
+ * admins get everything. Visitors get everything too, except the daily question, where they get the one for everyone.
+ * The lists themselves are shared and cached (lib/shared.ts); this only picks the caller's part in memory.
  */
-function gradeOr(profile: Profile | null): string | null {
-  if (!profile || profile.role === 'admin') return null;
-  return profile.grade_id ? `grade_id.is.null,grade_id.eq.${profile.grade_id}` : 'grade_id.is.null';
+function forGrade<T extends { grade_id: string | null }>(items: T[], profile: Profile | null): T[] {
+  if (!profile || profile.role === 'admin') return items;
+  return items.filter((i) => i.grade_id === null || i.grade_id === profile.grade_id);
 }
 
-/** Which wheel sections have something for this student right now. Games, quizzes and contests are targeted by RLS. */
+function forGradeStrict<T extends { grade_id: string | null }>(items: T[], profile: Profile | null): T[] {
+  return profile ? forGrade(items, profile) : items.filter((i) => i.grade_id === null);
+}
+
+/**
+ * Which wheel sections have something for this student right now. Games, quizzes and contests are
+ * checked by one database call that respects who each game is for; the rest comes from the cache.
+ */
 export async function sectionAvailability(supabase: Client, profile: Profile): Promise<Record<SectionKey, boolean>> {
-  const now = new Date();
-  const recentlyEnded = new Date(now.getTime() - 3 * 86400000).toISOString();
-  const head = { count: 'exact', head: true } as const;
-  const f = gradeOr(profile);
-  let tips = supabase.from('tips').select('id', head).eq('active', true);
-  let videos = supabase.from('videos').select('id', head).eq('active', true);
-  let daily = supabase.from('daily_questions').select('id', head).eq('day', cairoDayKey(now));
-  if (f) {
-    tips = tips.or(f);
-    videos = videos.or(f);
-    daily = daily.or(f);
-  }
-  const [games, quick, contests, upcoming, t, v, d] = await Promise.all([
-    supabase.from('games').select('id', head).eq('kind', 'game').eq('status', 'published'),
-    supabase.from('games').select('id', head).eq('kind', 'quick').eq('status', 'published'),
-    supabase
-      .from('games')
-      .select('id', head)
-      .eq('kind', 'contest')
-      .eq('status', 'published')
-      .lte('starts_at', now.toISOString())
-      .gte('ends_at', recentlyEnded),
-    supabase.rpc('upcoming_contests'),
-    tips,
-    videos,
-    daily,
+  const today = cairoDayKey();
+  const [targeted, tips, videos, daily] = await Promise.all([
+    supabase.rpc('wheel_sections'),
+    sharedTips().catch(() => []),
+    sharedVideos().catch(() => []),
+    sharedDailyQuestions(today).catch(() => []),
   ]);
+  const has = (targeted.data ?? {}) as Partial<Record<'games' | 'quick' | 'contests', boolean>>;
   return {
-    contests: (contests.count ?? 0) > 0 || ((upcoming.data as unknown[] | null)?.length ?? 0) > 0,
-    games: (games.count ?? 0) > 0,
-    quick: (quick.count ?? 0) > 0,
-    tips: (t.count ?? 0) > 0,
-    videos: (v.count ?? 0) > 0,
-    daily: (d.count ?? 0) > 0,
+    contests: Boolean(has.contests),
+    games: Boolean(has.games),
+    quick: Boolean(has.quick),
+    tips: forGrade(tips, profile).length > 0,
+    videos: forGrade(videos, profile).length > 0,
+    daily: forGrade(daily, profile).some((q) => q.day === today),
   };
 }
 
-export async function loadTips(supabase: Client, profile: Profile | null): Promise<Pick<Tip, 'id' | 'body'>[]> {
-  let q = supabase.from('tips').select('id, body').eq('active', true).order('created_at', { ascending: false }).limit(500);
-  const f = gradeOr(profile);
-  if (f) q = q.or(f);
-  const { data } = await q;
-  return (data ?? []) as Pick<Tip, 'id' | 'body'>[];
+export async function loadTips(profile: Profile | null): Promise<Pick<Tip, 'id' | 'body'>[]> {
+  const tips = await sharedTips().catch(() => []);
+  return forGrade(tips, profile)
+    .slice(0, 500)
+    .map(({ id, body }) => ({ id, body }));
 }
 
 export type VideoItem = Pick<Video, 'id' | 'title' | 'url' | 'description' | 'cover_url'>;
 
-export async function loadVideos(supabase: Client, profile: Profile | null): Promise<VideoItem[]> {
-  let q = supabase.from('videos').select('id, title, url, description, cover_url').eq('active', true).order('created_at', { ascending: false }).limit(200);
-  const f = gradeOr(profile);
-  if (f) q = q.or(f);
-  const { data } = await q;
-  return (data ?? []) as VideoItem[];
+export async function loadVideos(profile: Profile | null): Promise<VideoItem[]> {
+  const videos = await sharedVideos().catch(() => []);
+  return forGrade(videos, profile)
+    .slice(0, 200)
+    .map(({ id, title, url, description, cover_url }) => ({ id, title, url, description, cover_url }));
 }
 
 /** Today's question: the student's grade first, then the one for everyone. Visitors see the one for everyone. */
-export async function loadDailyQuestions(supabase: Client, profile: Profile | null): Promise<{ today: DailyQuestion | null; past: DailyQuestion[] }> {
+export async function loadDailyQuestions(profile: Profile | null): Promise<{ today: DailyQuestion | null; past: DailyQuestion[] }> {
   const today = cairoDayKey();
-  let q = supabase.from('daily_questions').select('*').lte('day', today).order('day', { ascending: false }).limit(40);
-  const f = profile ? gradeOr(profile) : 'grade_id.is.null';
-  if (f) q = q.or(f);
-  const { data } = await q;
-  const rows = (data ?? []) as DailyQuestion[];
+  const rows = forGradeStrict(await sharedDailyQuestions(today).catch(() => []), profile);
   const mine = (r: DailyQuestion) => Boolean(profile?.grade_id) && r.grade_id === profile?.grade_id;
   const rank = (r: DailyQuestion) => (mine(r) ? 0 : r.grade_id === null ? 1 : 2);
   const byDay = new Map<string, DailyQuestion>();

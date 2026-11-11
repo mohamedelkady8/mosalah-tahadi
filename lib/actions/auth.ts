@@ -173,7 +173,9 @@ export async function updateProfileAction(_prev: FormState, formData: FormData):
     console.error('profile update failed', error);
     return { error: 'معرفناش نحفظ التعديلات، جرّب تاني.' };
   }
-  revalidatePath('/', 'layout');
+  // Every page is rendered per request, so this only has to drop the student's own cached screens.
+  // (Revalidating the whole layout would also throw away the shared data cache for everyone.)
+  revalidatePath('/me');
   return { message: 'اتحفظت التعديلات.' };
 }
 

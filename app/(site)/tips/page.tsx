@@ -5,13 +5,12 @@ import { BulbIcon } from '@/components/ui/icons';
 import { getSession } from '@/lib/data';
 import { loadTips } from '@/lib/hub';
 import { sectionBack } from '@/lib/sections';
-import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'نصايح' };
 
 export default async function TipsPage() {
-  const [{ profile }, supabase] = await Promise.all([getSession(), createClient()]);
-  const tips = await loadTips(supabase, profile);
+  const { profile } = await getSession();
+  const tips = await loadTips(profile);
 
   return (
     <SitePage back={sectionBack(profile, '/admin/tips')}>

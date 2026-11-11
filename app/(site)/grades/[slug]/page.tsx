@@ -97,9 +97,9 @@ export default async function GradeGamesPage({ params }: { params: Params }) {
       profile.id,
       games.map((g) => g.id),
     ),
-    isAdmin ? Promise.resolve({ data: null }) : supabase.rpc('leaderboard_by_grade', { p_grade_id: grade.id, p_limit: 1 }),
+    isAdmin ? Promise.resolve({ data: null }) : supabase.rpc('my_grade_rank'),
   ]);
-  const myRank = (rankRows.data as { user_id: string; rank: number }[] | null)?.find((r) => r.user_id === profile.id)?.rank ?? null;
+  const myRank = rankRows.data === null || rankRows.data === undefined ? null : Number(rankRows.data);
   const played = Object.keys(best).length;
 
   return (

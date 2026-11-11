@@ -13,21 +13,16 @@ const CARD_COLUMNS = 'id, slug, title, description, type, item_count, cover_url,
  * Admins see every published game of the grade.
  */
 export async function gamesForGrade(supabase: Client, gradeId: string, profile: Profile): Promise<GameCardData[]> {
-  const { data: targets } = await supabase.from('game_targets').select('game_id, track_id').eq('grade_id', gradeId);
-  const isAdmin = profile.role === 'admin';
-  const ids = [
-    ...new Set(
-      (targets ?? []).filter((t) => isAdmin || t.track_id === null || t.track_id === profile.track_id).map((t) => t.game_id as string),
-    ),
-  ];
-  if (!ids.length) return [];
-  const { data } = await supabase
-    .from('games')
-    .select(CARD_COLUMNS)
-    .in('id', ids)
-    .eq('kind', 'game')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false });
+  let query = supabase.from('games').select(CARD_COLUMNS).eq('kind', 'game').eq('status', 'published').order('published_at', { ascending: false });
+  // A student only ever opens their own grade, and the database already limits them to the games
+  // made for their grade and track. Admins can read everything, so their list is narrowed by hand.
+  if (profile.role === 'admin') {
+    const { data: targets } = await supabase.from('game_targets').select('game_id').eq('grade_id', gradeId);
+    const ids = [...new Set((targets ?? []).map((t) => t.game_id as string))];
+    if (!ids.length) return [];
+    query = query.in('id', ids);
+  }
+  const { data } = await query;
   return ((data ?? []) as (GameCardData & { description: string | null })[]).map((g) => ({ ...g, description: g.description ?? '' }));
 }
 

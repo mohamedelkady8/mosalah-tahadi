@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import GameShell from '@/components/games/GameShell';
 import type { PlayableGame } from '@/components/games/types';
 import { SitePage } from '@/components/site/SiteHeader';
@@ -13,12 +14,13 @@ type Params = Promise<{ slug: string }>;
 
 const COLUMNS = 'id, slug, title, description, type, content, settings, item_count, cover_url, topic, difficulty, status, kind';
 
-async function loadGame(slug: string) {
+/** Read once per request: the page title and the page itself both need the game. */
+const loadGame = cache(async (slug: string) => {
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) return null;
   const supabase = await createClient();
   const { data } = await supabase.from('games').select(COLUMNS).eq('slug', slug).maybeSingle();
   return data as (PlayableGame & { status: 'draft' | 'published'; kind: GameKind }) | null;
-}
+});
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const game = await loadGame((await params).slug);
@@ -53,10 +55,9 @@ export default async function PlayPage({ params }: { params: Params }) {
   if (game.kind !== 'game') redirect(studentHref(game.kind, game.slug));
 
   const supabase = await createClient();
-  const [{ count }, { data: best }] = await Promise.all([
-    supabase.from('attempts').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('game_id', game.id),
-    supabase.from('attempts').select('score').eq('user_id', userId).eq('game_id', game.id).order('score', { ascending: false }).limit(1).maybeSingle(),
-  ]);
+  const { data: tries } = await supabase.from('attempts').select('score').eq('user_id', userId).eq('game_id', game.id).limit(1000);
+  const attemptsUsed = tries?.length ?? 0;
+  const best = attemptsUsed ? Math.max(...(tries ?? []).map((t) => t.score as number)) : null;
 
   return (
     <SitePage back={{ href: backHref, label: backLabel }}>
@@ -72,7 +73,7 @@ export default async function PlayPage({ params }: { params: Params }) {
         mode="play"
         backHref={backHref}
         backLabel={myGrade ? 'ألعاب تانية' : 'رجوع'}
-        stats={{ attemptsUsed: count ?? 0, best: (best?.score as number | undefined) ?? null, unlimited: isAdmin }}
+        stats={{ attemptsUsed, best, unlimited: isAdmin }}
       />
     </SitePage>
   );

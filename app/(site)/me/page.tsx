@@ -8,6 +8,7 @@ import { getCatalog, gradeName, requireSession, trackName } from '@/lib/data';
 import { firstName, num, pct, timeAgo } from '@/lib/format';
 import { getDef } from '@/lib/games/registry';
 import type { GameType } from '@/lib/games/types';
+import { kindOf, studentHref, type GameKind } from '@/lib/kinds';
 import { computeBadges, computeStreak, type Badge } from '@/lib/student';
 import { createClient } from '@/lib/supabase/server';
 
@@ -27,7 +28,7 @@ interface AttemptRow {
   score: number;
   max_score: number;
   created_at: string;
-  games: { title: string; slug: string; type: GameType; status: string } | null;
+  games: { title: string; slug: string; type: GameType; status: string; kind: GameKind } | null;
 }
 
 export default async function MePage() {
@@ -37,7 +38,7 @@ export default async function MePage() {
     getCatalog(),
     supabase
       .from('attempts')
-      .select('id, game_id, score, max_score, created_at, games(title, slug, type, status)')
+      .select('id, game_id, score, max_score, created_at, games(title, slug, type, status, kind)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1000),
@@ -57,12 +58,12 @@ export default async function MePage() {
   const showTrack = (grade?.trackIds.length ?? 0) > 1 && profile.track_id;
 
   return (
-    <SitePage back={{ href: grade ? `/grades/${grade.slug}` : '/grades', label: grade ? `ألعاب ${grade.name}` : 'المراحل' }}>
+    <SitePage back={profile.role === 'admin' ? { href: '/admin', label: 'لوحة التحكم' } : { href: '/wheel', label: 'العجلة' }}>
       <p className="hello">{profile.role === 'admin' ? 'حساب أدمن' : [gradeName(catalog, profile.grade_id), showTrack ? trackName(catalog, profile.track_id) : ''].filter(Boolean).join(' · ')}</p>
       <h1 className="gp-title">{firstName(profile.full_name)}</h1>
       <p className="gp-sub">{streak.playedToday ? 'لعبت النهارده، برافو عليك! كمّل كده.' : streak.current ? 'لسه ملعبتش النهارده، العب لعبة عشان متقطعش السلسلة.' : 'العب كل يوم عشان تبني سلسلة أيام وتاخد شارات.'}</p>
 
-      <div className="st-strip a-fadeup" style={{ animationDelay: '.35s' }}>
+      <div className="st-strip a-fadeup" style={{ animationDelay: '.18s' }}>
         <div className="st-stat">
           <b>{num(profile.points)}</b>
           <span>نقطة</span>
@@ -85,7 +86,7 @@ export default async function MePage() {
 
       <div className="me-grid">
         <div className="stack" style={{ gap: 18 }}>
-          <section className="card a-fadeup" style={{ animationDelay: '.45s' }} aria-labelledby="badges-title">
+          <section className="card a-fadeup" style={{ animationDelay: '.22s' }} aria-labelledby="badges-title">
             <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
               <h2 id="badges-title" style={{ fontSize: 22 }}>
                 الشارات
@@ -106,7 +107,7 @@ export default async function MePage() {
             {streak.longest > 1 && <p className="muted" style={{ marginTop: 12 }}>أطول سلسلة ليك: {num(streak.longest)} أيام ورا بعض.</p>}
           </section>
 
-          <section className="card a-fadeup" style={{ animationDelay: '.55s' }} aria-labelledby="hist-title">
+          <section className="card a-fadeup" style={{ animationDelay: '.28s' }} aria-labelledby="hist-title">
             <h2 id="hist-title" style={{ fontSize: 22, marginBottom: 12 }}>
               آخر اللي لعبته
             </h2>
@@ -122,14 +123,14 @@ export default async function MePage() {
                       </span>
                       <div className="grow">
                         {playable ? (
-                          <Link href={`/play/${g.slug}`}>
+                          <Link href={studentHref(kindOf(g.kind), g.slug)}>
                             <b>{g.title}</b>
                           </Link>
                         ) : (
                           <b>{g?.title ?? 'لعبة اتشالت'}</b>
                         )}
                         <small>
-                          {g ? getDef(g.type).label : ''} · {timeAgo(a.created_at)}
+                          {g ? (g.kind === 'quick' ? 'ع السريع' : g.kind === 'contest' ? 'مسابقة' : getDef(g.type).label) : ''} · {timeAgo(a.created_at)}
                         </small>
                       </div>
                       <span className={`badge ${a.max_score && a.score >= a.max_score ? 'badge-gold' : ''}`}>{pct(a.score, a.max_score)}</span>
@@ -140,8 +141,8 @@ export default async function MePage() {
             ) : (
               <div className="empty" style={{ padding: 16 }}>
                 <p>لسه ملعبتش ولا لعبة.</p>
-                <Link href="/games" className="btn btn-gold">
-                  يلا نلعب
+                <Link href="/wheel" className="btn btn-gold">
+                  لف العجلة
                 </Link>
               </div>
             )}
@@ -149,7 +150,7 @@ export default async function MePage() {
         </div>
 
         <div className="stack" style={{ gap: 18 }}>
-          <section id="profile" className="card a-fadeup" style={{ animationDelay: '.5s' }} aria-labelledby="profile-title">
+          <section id="profile" className="card a-fadeup" style={{ animationDelay: '.25s' }} aria-labelledby="profile-title">
             <h2 id="profile-title" style={{ fontSize: 22, marginBottom: 4 }}>
               بياناتك
             </h2>
@@ -161,13 +162,13 @@ export default async function MePage() {
               initial={{ full_name: profile.full_name, phone: profile.phone ?? '', grade_id: profile.grade_id ?? '', track_id: profile.track_id ?? '' }}
             />
           </section>
-          <section className="card a-fadeup" style={{ animationDelay: '.6s' }} aria-labelledby="pass-title">
+          <section className="card a-fadeup" style={{ animationDelay: '.3s' }} aria-labelledby="pass-title">
             <h2 id="pass-title" style={{ fontSize: 22, marginBottom: 12 }}>
               كلمة السر
             </h2>
             <PasswordForm />
           </section>
-          <form action="/auth/signout" method="post" className="a-fadeup" style={{ animationDelay: '.65s' }}>
+          <form action="/auth/signout" method="post" className="a-fadeup" style={{ animationDelay: '.32s' }}>
             <button type="submit" className="btn btn-cream btn-block">
               <LogoutIcon size={18} /> خروج
             </button>

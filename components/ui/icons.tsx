@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-type IconProps = SVGProps<SVGSVGElement> & { size?: number };
+export type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
 function Svg({ size = 24, children, ...rest }: IconProps & { children: React.ReactNode }) {
   return (
@@ -324,3 +324,85 @@ export const BoltIcon = (p: IconProps) => (
     <path d="M13 2 L4 14 H11 L10 22 L20 9 H13 Z" />
   </Svg>
 );
+export const WheelIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="2.2" />
+    <path d="M12 3 V9.8 M12 14.2 V21 M4.2 7.5 L10.1 10.9 M13.9 13.1 L19.8 16.5 M4.2 16.5 L10.1 13.1 M13.9 10.9 L19.8 7.5" />
+  </Svg>
+);
+export const PlayIcon = ({ size = 24, ...p }: IconProps) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" {...p}>
+    <path d="M8 5.2 C8 4.4 8.9 3.9 9.6 4.4 L19.2 11.2 C19.8 11.6 19.8 12.4 19.2 12.8 L9.6 19.6 C8.9 20.1 8 19.6 8 18.8 Z" />
+  </svg>
+);
+export const VideoIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="2.5" y="5" width="14" height="14" rx="3" />
+    <path d="M16.5 10 L21.5 7 V17 L16.5 14" />
+  </Svg>
+);
+export const BulbIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M9 18 H15 M10 21 H14 M12 3 C8.4 3 6 5.6 6 8.8 C6 11 7.2 12.4 8.3 13.5 C9 14.2 9.3 15 9.3 16 H14.7 C14.7 15 15 14.2 15.7 13.5 C16.8 12.4 18 11 18 8.8 C18 5.6 15.6 3 12 3 Z" />
+  </Svg>
+);
+export const QuestionIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.4 9.3 C9.6 7.9 10.7 7 12.1 7 C13.6 7 14.8 8 14.8 9.4 C14.8 11.4 12 11.6 12 13.8" />
+    <circle cx="12" cy="17" r="0.9" fill="currentColor" />
+  </Svg>
+);
+export const ShareIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 15 V3.5 M7.5 8 L12 3.5 L16.5 8" />
+    <path d="M8 11 H6 C5 11 4 12 4 13 V19 C4 20 5 21 6 21 H18 C19 21 20 20 20 19 V13 C20 12 19 11 18 11 H16" />
+  </Svg>
+);
+export const CalendarIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+    <path d="M3.5 10 H20.5 M8 3 V7 M16 3 V7" />
+  </Svg>
+);
+export const GiftIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3.5" y="8" width="17" height="4.5" rx="1.2" />
+    <path d="M5 12.5 V20 H19 V12.5 M12 8 V20" />
+    <path d="M12 8 C10.5 5 7 4.5 7 6.6 C7 8 9.5 8 12 8 Z M12 8 C13.5 5 17 4.5 17 6.6 C17 8 14.5 8 12 8 Z" />
+  </Svg>
+);
+export const ExternalIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M14 4 H20 V10 M20 4 L11 13" />
+    <path d="M18 14 V18.5 C18 19.3 17.3 20 16.5 20 H5.5 C4.7 20 4 19.3 4 18.5 V7.5 C4 6.7 4.7 6 5.5 6 H10" />
+  </Svg>
+);
+export const FacebookIcon = ({ size = 24, ...p }: IconProps) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" {...p}>
+    <circle cx="12" cy="12" r="11.6" fill="#FFFFFF" />
+    <path
+      fill="#1877F2"
+      d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"
+    />
+  </svg>
+);
+
+/** One icon per wheel section, used on the wheel legend, section pages and the admin panel. */
+export function SectionIcon({ section, ...p }: IconProps & { section: string }) {
+  switch (section) {
+    case 'contests':
+      return <TrophyIcon {...p} />;
+    case 'games':
+      return <GamepadIcon {...p} />;
+    case 'quick':
+      return <BoltIcon {...p} />;
+    case 'tips':
+      return <BulbIcon {...p} />;
+    case 'videos':
+      return <VideoIcon {...p} />;
+    default:
+      return <QuestionIcon {...p} />;
+  }
+}

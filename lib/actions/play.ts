@@ -4,6 +4,7 @@ import { getSession } from '@/lib/data';
 import { getDef } from '@/lib/games/registry';
 import { parseSettings } from '@/lib/games/settings';
 import { isGameType, type ScoreResult } from '@/lib/games/types';
+import { CONTEST_GRACE_MS } from '@/lib/kinds';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 
@@ -28,10 +29,19 @@ export async function submitAttempt(input: { gameId: string; answers: unknown; d
   const supabase = await createClient();
   const { data: game } = await supabase
     .from('games')
-    .select('id, type, content, settings, status')
+    .select('id, type, content, settings, status, kind, starts_at, ends_at')
     .eq('id', String(input.gameId))
     .maybeSingle();
   if (!game || !isGameType(game.type)) return { ok: false, error: 'اللعبة دي مش متاحة ليك.' };
+  const isAdmin = profile.role === 'admin';
+  const contest = game.kind === 'contest';
+  if (contest && !isAdmin) {
+    const now = Date.now();
+    if (!game.starts_at || new Date(game.starts_at).getTime() > now) return { ok: false, error: 'المسابقة لسه مابدأتش.' };
+    if (game.ends_at && new Date(game.ends_at).getTime() + CONTEST_GRACE_MS < now) {
+      return { ok: false, error: 'المسابقة خلصت، ومبقاش ينفع تتسجل إجابات جديدة.' };
+    }
+  }
 
   const def = getDef(game.type);
   const content = def.contentSchema.safeParse(game.content);
@@ -46,13 +56,18 @@ export async function submitAttempt(input: { gameId: string; answers: unknown; d
     .eq('game_id', game.id)
     .eq('user_id', userId);
   const used = count ?? 0;
-  if (settings.attemptsAllowed > 0 && used >= settings.attemptsAllowed && profile.role !== 'admin') {
-    return { ok: false, error: 'خلصت عدد المحاولات المسموحة للعبة دي.', attemptsUsed: used };
+  const allowed = contest ? 1 : settings.attemptsAllowed;
+  if (allowed > 0 && used >= allowed && !isAdmin) {
+    return {
+      ok: false,
+      error: contest ? 'إنت شاركت في المسابقة دي قبل كده، وليك محاولة واحدة بس.' : 'خلصت عدد المحاولات المسموحة للعبة دي.',
+      attemptsUsed: used,
+    };
   }
 
   const result = def.score(content.data, answers.data, settings);
 
-  if (profile.role === 'admin' || game.status !== 'published') {
+  if (isAdmin || game.status !== 'published') {
     return { ok: true, result, saved: false, note: 'دي تجربة أدمن، النتيجة مش بتتحفظ.', best: result.score, attemptsUsed: used, points: null };
   }
 

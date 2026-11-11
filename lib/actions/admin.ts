@@ -10,9 +10,11 @@ import { checkContent, getDef } from '@/lib/games/registry';
 import { uid } from '@/lib/games/random';
 import { parseSettings } from '@/lib/games/settings';
 import { GAME_TYPES } from '@/lib/games/types';
+import { GAME_KINDS, KIND_INFO, kindOf } from '@/lib/kinds';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import type { Catalog } from '@/lib/types';
+import { parseVideoUrl } from '@/lib/videos';
 
 export type ActionResult = { ok: true; id?: string; slug?: string; message?: string; warnings?: string[] } | { ok: false; error: string; errors?: string[] };
 
@@ -43,6 +45,7 @@ const targetSchema = z.object({ grade_id: z.guid(), track_id: z.guid().nullable(
 
 const gameInput = z.object({
   id: z.guid().optional(),
+  kind: z.enum(GAME_KINDS).default('game'),
   type: z.enum(GAME_TYPES),
   title: z.string().trim().min(2, 'اكتب اسم اللعبة.').max(120, 'اسم اللعبة طويل أوي.'),
   description: z.string().trim().max(400, 'الوصف طويل أوي.').default(''),
@@ -61,9 +64,19 @@ const gameInput = z.object({
   content: z.unknown(),
   settings: z.unknown(),
   targets: z.array(targetSchema).max(200).default([]),
+  starts_at: z.iso.datetime({ offset: true }).nullable().default(null),
+  ends_at: z.iso.datetime({ offset: true }).nullable().default(null),
+  prize: z.string().trim().max(200, 'الجايزة طويلة أوي.').default(''),
 });
 
 export type GameInput = z.input<typeof gameInput>;
+
+/** Problems that stop a contest from being published, or a window that can never work. */
+function contestWindowError(startsAt: string | null, endsAt: string | null, publishing: boolean): string | null {
+  if (startsAt && endsAt && new Date(endsAt) <= new Date(startsAt)) return 'ميعاد نهاية المسابقة لازم يكون بعد ميعاد بدايتها.';
+  if (publishing && (!startsAt || !endsAt)) return 'حدد ميعاد بداية ونهاية المسابقة قبل ما تنشرها.';
+  return null;
+}
 
 /** Keeps only real grade/track pairs and stores "all tracks" as one row with track_id null. */
 function normalizeTargets(catalog: Catalog, targets: z.output<typeof targetSchema>[]) {
@@ -88,7 +101,13 @@ export async function saveGame(raw: GameInput): Promise<ActionResult> {
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
   const input = parsed.data;
   const def = getDef(input.type);
+  const contest = input.kind === 'contest';
 
+  if (input.kind === 'quick' && input.type !== 'mcq') return { ok: false, error: 'أسئلة «ع السريع» لازم تكون اختيار من متعدد.' };
+  if (contest) {
+    const windowError = contestWindowError(input.starts_at, input.ends_at, input.status === 'published');
+    if (windowError) return { ok: false, error: windowError };
+  }
   if (JSON.stringify(input.content ?? null).length > 400_000) return { ok: false, error: 'محتوى اللعبة كبير أوي، قسّمها على كذا لعبة.' };
 
   const check = checkContent(input.type, input.content);
@@ -108,7 +127,9 @@ export async function saveGame(raw: GameInput): Promise<ActionResult> {
     itemCount = 0;
   }
 
+  const settings = parseSettings(input.settings, input.type);
   const row = {
+    kind: input.kind,
     title: input.title,
     description: input.description,
     type: input.type,
@@ -117,8 +138,11 @@ export async function saveGame(raw: GameInput): Promise<ActionResult> {
     cover_url: input.cover_url || null,
     status: input.status,
     content,
-    settings: parseSettings(input.settings, input.type),
+    settings: contest ? { ...settings, attemptsAllowed: 1 } : settings,
     item_count: itemCount,
+    starts_at: contest ? input.starts_at : null,
+    ends_at: contest ? input.ends_at : null,
+    prize: contest ? input.prize || null : null,
   };
 
   const { supabase, userId } = ctx;
@@ -151,11 +175,12 @@ export async function saveGame(raw: GameInput): Promise<ActionResult> {
   }
 
   refresh();
+  const opensLater = contest && input.status === 'published' && input.starts_at && new Date(input.starts_at) > new Date();
   return {
     ok: true,
     id: saved.id,
     slug: saved.slug,
-    message: input.status === 'published' ? 'اتحفظت واتنشرت للطلاب.' : 'اتحفظت كمسودة.',
+    message: input.status !== 'published' ? 'اتحفظت كمسودة.' : opensLater ? 'اتنشرت، والطلاب هيقدروا يدخلوها في ميعادها.' : 'اتحفظت واتنشرت للطلاب.',
     warnings: check.ok ? undefined : check.errors,
   };
 }
@@ -166,13 +191,18 @@ export async function setGameStatus(id: string, status: 'draft' | 'published'): 
   const { supabase } = ctx;
   if (status === 'published') {
     const [{ data: game }, { count }] = await Promise.all([
-      supabase.from('games').select('type, content').eq('id', id).maybeSingle(),
+      supabase.from('games').select('type, content, kind, starts_at, ends_at').eq('id', id).maybeSingle(),
       supabase.from('game_targets').select('id', { count: 'exact', head: true }).eq('game_id', id),
     ]);
     if (!game) return FAILED;
+    const the = KIND_INFO[kindOf(game.kind)].the;
     const check = checkContent(game.type, game.content);
-    if (!check.ok) return { ok: false, error: 'اللعبة فيها حاجات ناقصة، افتحها وظبطها الأول.', errors: check.errors };
-    if (!count) return { ok: false, error: 'اللعبة مش متحدد لها مرحلة، افتحها واختار المراحل.' };
+    if (!check.ok) return { ok: false, error: `فيه حاجات ناقصة في ${the}، افتح صفحة التعديل وظبطها الأول.`, errors: check.errors };
+    if (!count) return { ok: false, error: 'مفيش مراحل متحددة، افتح صفحة التعديل واختار هتظهر لمين.' };
+    if (game.kind === 'contest') {
+      const windowError = contestWindowError(game.starts_at, game.ends_at, true);
+      if (windowError) return { ok: false, error: windowError };
+    }
   }
   const { error } = await supabase.from('games').update({ status }).eq('id', id);
   if (error) return FAILED;
@@ -193,6 +223,8 @@ export async function duplicateGame(id: string): Promise<ActionResult> {
     .from('games')
     .insert({
       slug: newSlug(),
+      kind: game.kind,
+      prize: game.prize,
       title: `${game.title} (نسخة)`.slice(0, 120),
       description: game.description,
       type: game.type,
@@ -219,7 +251,115 @@ export async function deleteGame(id: string): Promise<ActionResult> {
   const { error } = await ctx.supabase.from('games').delete().eq('id', id);
   if (error) return FAILED;
   refresh();
-  return { ok: true, message: 'اللعبة اتمسحت.' };
+  return { ok: true, message: 'اتمسحت.' };
+}
+
+// ---------------------------------------------------------------------------
+// Tips, videos and the question of the day
+// ---------------------------------------------------------------------------
+
+const gradeIdSchema = z.guid().nullable().default(null);
+
+const tipInput = z.object({
+  id: z.guid().optional(),
+  body: z.string().trim().min(3, 'اكتب النصيحة.').max(600, 'النصيحة طويلة أوي.'),
+  grade_id: gradeIdSchema,
+  active: z.boolean().default(true),
+});
+
+export async function saveTip(raw: z.input<typeof tipInput>): Promise<ActionResult> {
+  const ctx = await asAdmin();
+  if (!ctx) return NOT_ADMIN;
+  const parsed = tipInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const { id, ...fields } = parsed.data;
+  const { error } = id ? await ctx.supabase.from('tips').update(fields).eq('id', id) : await ctx.supabase.from('tips').insert(fields);
+  if (error) return FAILED;
+  refresh();
+  return { ok: true, message: id ? 'النصيحة اتعدلت.' : 'النصيحة اتضافت.' };
+}
+
+export async function deleteTip(id: string): Promise<ActionResult> {
+  const ctx = await asAdmin();
+  if (!ctx) return NOT_ADMIN;
+  const { error } = await ctx.supabase.from('tips').delete().eq('id', id);
+  if (error) return FAILED;
+  refresh();
+  return { ok: true, message: 'النصيحة اتمسحت.' };
+}
+
+const httpsUrl = (message: string) =>
+  z
+    .string()
+    .trim()
+    .max(500, 'الرابط طويل أوي.')
+    .refine((s) => /^https:\/\/[^\s]+$/i.test(s), message);
+
+const videoInput = z.object({
+  id: z.guid().optional(),
+  title: z.string().trim().min(2, 'اكتب عنوان الفيديو.').max(120, 'العنوان طويل أوي.'),
+  url: httpsUrl('حط رابط الفيديو كامل، بيبدأ بـ https://'),
+  description: z.string().trim().max(300, 'الوصف طويل أوي.').default(''),
+  cover_url: z.string().trim().max(1000).nullable().default(null),
+  grade_id: gradeIdSchema,
+  active: z.boolean().default(true),
+});
+
+export async function saveVideo(raw: z.input<typeof videoInput>): Promise<ActionResult> {
+  const ctx = await asAdmin();
+  if (!ctx) return NOT_ADMIN;
+  const parsed = videoInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  if (!parseVideoUrl(parsed.data.url)) return { ok: false, error: 'الرابط ده مش مظبوط.' };
+  const { id, ...fields } = parsed.data;
+  const row = { ...fields, cover_url: fields.cover_url || null };
+  const { error } = id ? await ctx.supabase.from('videos').update(row).eq('id', id) : await ctx.supabase.from('videos').insert(row);
+  if (error) return FAILED;
+  refresh();
+  return { ok: true, message: id ? 'الفيديو اتعدل.' : 'الفيديو اتضاف.' };
+}
+
+export async function deleteVideo(id: string): Promise<ActionResult> {
+  const ctx = await asAdmin();
+  if (!ctx) return NOT_ADMIN;
+  const { error } = await ctx.supabase.from('videos').delete().eq('id', id);
+  if (error) return FAILED;
+  refresh();
+  return { ok: true, message: 'الفيديو اتمسح.' };
+}
+
+const dailyInput = z.object({
+  id: z.guid().optional(),
+  day: z.iso.date({ error: 'اختار اليوم.' }),
+  grade_id: gradeIdSchema,
+  question: z.string().trim().min(3, 'اكتب السؤال.').max(800, 'السؤال طويل أوي.'),
+  image_url: z.string().trim().max(1000).nullable().default(null),
+  post_url: z.union([z.literal(''), httpsUrl('رابط البوست لازم يبدأ بـ https://')]).default(''),
+});
+
+export async function saveDailyQuestion(raw: z.input<typeof dailyInput>): Promise<ActionResult> {
+  const ctx = await asAdmin();
+  if (!ctx) return NOT_ADMIN;
+  const parsed = dailyInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const { id, ...fields } = parsed.data;
+  const row = { ...fields, image_url: fields.image_url || null, post_url: fields.post_url || null };
+  const { error } = id
+    ? await ctx.supabase.from('daily_questions').update(row).eq('id', id)
+    : await ctx.supabase.from('daily_questions').insert(row);
+  if (error?.code === '23505') return { ok: false, error: 'فيه سؤال تاني لنفس اليوم ونفس المرحلة. عدّله هو، أو اختار يوم تاني.' };
+  if (error) return FAILED;
+  refresh();
+  return { ok: true, message: id ? 'السؤال اتعدل.' : 'السؤال اتضاف.' };
+}
+
+export async function deleteDailyQuestion(id: string): Promise<ActionResult> {
+  const ctx = await asAdmin();
+  if (!ctx) return NOT_ADMIN;
+  const { error } = await ctx.supabase.from('daily_questions').delete().eq('id', id);
+  if (error) return FAILED;
+  refresh();
+  return { ok: true, message: 'السؤال اتمسح.' };
 }
 
 // ---------------------------------------------------------------------------

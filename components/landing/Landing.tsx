@@ -1,7 +1,7 @@
 import { Fragment, type CSSProperties } from 'react';
 import { SectionLink } from '@/components/site/SectionLink';
 import { HeaderActions } from '@/components/site/SiteHeader';
-import { SECTIONS, type Section } from '@/lib/sections';
+import { FACEBOOK_GROUP, SECTIONS, type Section } from '@/lib/sections';
 import { LandingStage } from './LandingStage';
 import { NextPage } from './NextPage';
 
@@ -9,34 +9,32 @@ const STAR_PATH = 'M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C
 
 const TITLE_WORDS = ['موقع', 'تيم', 'حمثلاح'];
 
-const FACEBOOK_GROUP = 'https://www.facebook.com/share/g/19j9KEgPSD/?mibextid=wwXIfr';
-
 const NOTES: { section: Section; r: number; delay: number }[] = [
   { section: SECTIONS.contests, r: -4, delay: 0 },
   { section: SECTIONS.games, r: 3, delay: 0.4 },
   { section: SECTIONS.quick, r: -2, delay: 0.8 },
   { section: SECTIONS.tips, r: 4, delay: 1.2 },
   { section: SECTIONS.videos, r: -3, delay: 1.6 },
+  { section: SECTIONS.daily, r: 2, delay: 2 },
 ];
 
-const BIRDS: { d: string; origin: string; dur: number }[] = [
-  { d: 'M20 40 Q 30 30 40 40 Q 50 30 60 40', origin: '40px 40px', dur: 0.9 },
-  { d: 'M90 20 Q 98 12 106 20 Q 114 12 122 20', origin: '106px 20px', dur: 1.1 },
-  { d: 'M140 60 Q 150 50 160 60 Q 170 50 180 60', origin: '160px 60px', dur: 0.8 },
-  { d: 'M70 85 Q 77 78 84 85 Q 91 78 98 85', origin: '84px 85px', dur: 1 },
-  { d: 'M175 100 Q 181 94 187 100 Q 193 94 199 100', origin: '187px 100px', dur: 1.2 },
+/**
+ * Each bird is its own small SVG so its flap can run on the GPU (shapes animated inside one SVG repaint every frame).
+ * `box` is the bird's area in the 220×120 flock (x, y, width, height) and `origin` the point its wings fold toward.
+ */
+const BIRDS: { d: string; box: [number, number, number, number]; origin: [number, number]; dur: number }[] = [
+  { d: 'M20 40 Q 30 30 40 40 Q 50 30 60 40', box: [18, 28, 44, 14], origin: [40, 40], dur: 0.9 },
+  { d: 'M90 20 Q 98 12 106 20 Q 114 12 122 20', box: [88, 10, 36, 12], origin: [106, 20], dur: 1.1 },
+  { d: 'M140 60 Q 150 50 160 60 Q 170 50 180 60', box: [138, 48, 44, 14], origin: [160, 60], dur: 0.8 },
+  { d: 'M70 85 Q 77 78 84 85 Q 91 78 98 85', box: [68, 76, 32, 11], origin: [84, 85], dur: 1 },
+  { d: 'M175 100 Q 181 94 187 100 Q 193 94 199 100', box: [173, 92, 28, 10], origin: [187, 100], dur: 1.2 },
 ];
 
-export function Landing() {
+/** `nextHref`: where the "next page" pull goes, the wheel for signed-in students and the grades for visitors. */
+export function Landing({ nextHref }: { nextHref: string }) {
   return (
     <LandingStage>
-      <svg aria-hidden="true" className="hm-grain">
-        <filter id="hmGrain">
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={2} stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#hmGrain)" />
-      </svg>
+      <div aria-hidden="true" className="hm-grain" />
       <svg aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" className="hm-city">
         <g fill="none" stroke="#7A2A3A" strokeWidth="1.2">
           <path d="M40 900 V560 H120 V500 H210 V900 M240 900 V610 H330 V900 M1120 900 V520 H1180 V470 H1260 V900 M1290 900 V600 H1400 V900" />
@@ -44,8 +42,8 @@ export function Landing() {
         </g>
       </svg>
 
-      <svg aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" className="hm-layer">
-        <g className="hm-drift">
+      <div aria-hidden="true" className="hm-clouds">
+        <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" className="hm-layer">
           <g fill="#F3D9C9" opacity="0.16">
             <ellipse cx="120" cy="900" rx="300" ry="120" />
             <ellipse cx="560" cy="930" rx="340" ry="120" />
@@ -61,17 +59,22 @@ export function Landing() {
             <ellipse cx="1290" cy="240" rx="80" ry="30" />
             <ellipse cx="240" cy="420" rx="110" ry="28" />
           </g>
-        </g>
-      </svg>
+        </svg>
+      </div>
 
       <div aria-hidden="true" className="hm-birds">
-        <svg viewBox="0 0 220 120" style={{ width: 220, height: 120 }}>
-          <g fill="none" stroke="#7A2A3A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
-            {BIRDS.map((b) => (
-              <path key={b.d} d={b.d} style={{ transformOrigin: b.origin, animation: `hmFlap ${b.dur}s ease-in-out infinite` }} />
-            ))}
-          </g>
-        </svg>
+        <div className="hm-flock">
+          {BIRDS.map(({ d, box: [x, y, w, h], origin: [ox, oy], dur }) => (
+            <svg
+              key={d}
+              viewBox={`${x} ${y} ${w} ${h}`}
+              className="hm-bird"
+              style={{ left: x, top: y, width: w, height: h, transformOrigin: `${ox - x}px ${oy - y}px`, animationDuration: `${dur}s` }}
+            >
+              <path d={d} />
+            </svg>
+          ))}
+        </div>
       </div>
 
       <div aria-hidden="true" className="hm-plane" style={{ top: '34%', animation: 'hmGlide 16s 2s linear infinite' }}>
@@ -97,7 +100,7 @@ export function Landing() {
         <div className="hm-hero">
           <span aria-hidden="true" className="hm-sun" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/mr-salah.webp" alt="مستر محمد صلاح" className="hm-teacher" />
+          <img src="/assets/mr-salah.webp" alt="مستر محمد صلاح" className="hm-teacher" fetchPriority="high" />
         </div>
 
         <div aria-hidden="true" className="hm-stars">
@@ -111,7 +114,7 @@ export function Landing() {
             <path d={STAR_PATH} fill="#F6D58A" />
           </svg>
         </div>
-        <h1 className="hm-title" style={{ filter: 'url(#hmRough)' }}>
+        <h1 className="hm-title">
           {TITLE_WORDS.map((word, i) => (
             <Fragment key={word}>
               {i > 0 && ' '}
@@ -122,18 +125,18 @@ export function Landing() {
           ))}
         </h1>
         <svg aria-hidden="true" width="0" height="0" style={{ position: 'absolute' }}>
-          <filter id="hmRough">
+          <filter id="hmRough" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves={2} seed={4} />
             <feDisplacementMap in="SourceGraphic" scale={4} />
           </filter>
         </svg>
         <p className="hm-slogan">We Don’t Study Alone.</p>
 
-        <p className="hm-lead">هنا هتفضلوا معانا في كل حاجة مختلفة</p>
+        <p className="hm-lead">هنا هتلاقوا معانا كل حاجة مختلفة</p>
 
         <div className="hm-board">
           <svg aria-hidden="true" viewBox="0 0 760 200" preserveAspectRatio="none" className="hm-layer">
-            <g fill="none" stroke="#4FA3E0" strokeWidth="2" strokeDasharray="900" style={{ animation: 'hmDraw 2.2s 1.4s ease-out both' }}>
+            <g fill="none" stroke="#4FA3E0" strokeWidth="2" strokeDasharray="900" style={{ animation: 'hmDraw 1.2s .7s ease-out both' }}>
               <path d="M90 60 L 380 150 L 670 60" />
               <path d="M90 60 L 280 40 L 480 40 L 670 60" />
               <path d="M280 40 L 380 150 L 480 40" />
@@ -149,7 +152,7 @@ export function Landing() {
                 style={
                   {
                     '--r': `${n.r}deg`,
-                    '--drop': `${(i * 0.16).toFixed(2)}s`,
+                    '--drop': `${(i * 0.07).toFixed(2)}s`,
                     '--sway': `${n.delay}s`,
                     transform: `rotate(${n.r}deg)`,
                   } as CSSProperties
@@ -175,7 +178,7 @@ export function Landing() {
         </a>
       </main>
 
-      <NextPage href="/grades" />
+      <NextPage href={nextHref} />
     </LandingStage>
   );
 }

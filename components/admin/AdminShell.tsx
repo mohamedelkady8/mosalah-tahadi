@@ -3,15 +3,39 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { GamepadIcon, HomeIcon, LayersIcon, LogoutIcon, PlusIcon, QuoteIcon, UsersIcon } from '@/components/ui/icons';
+import { HomeIcon, LayersIcon, LogoutIcon, QuoteIcon, SectionIcon, UsersIcon, WheelIcon, type IconProps } from '@/components/ui/icons';
+import { SECTION_KEYS, SECTIONS, type SectionKey } from '@/lib/sections';
 
-const LINKS = [
-  { href: '/admin', label: 'الرئيسية', icon: HomeIcon, match: (p: string) => p === '/admin' },
-  { href: '/admin/games', label: 'الألعاب', icon: GamepadIcon, match: (p: string) => p.startsWith('/admin/games') && p !== '/admin/games/new' },
-  { href: '/admin/games/new', label: 'لعبة جديدة', icon: PlusIcon, match: (p: string) => p === '/admin/games/new' },
-  { href: '/admin/students', label: 'الطلاب', icon: UsersIcon, match: (p: string) => p.startsWith('/admin/students') },
-  { href: '/admin/grades', label: 'المراحل والشعب', icon: LayersIcon, match: (p: string) => p.startsWith('/admin/grades') },
-  { href: '/admin/quotes', label: 'جمل الصفحة الرئيسية', icon: QuoteIcon, match: (p: string) => p.startsWith('/admin/quotes') },
+const SECTION_ADMIN: Record<SectionKey, string> = {
+  contests: '/admin/contests',
+  games: '/admin/games',
+  quick: '/admin/quick',
+  tips: '/admin/tips',
+  videos: '/admin/videos',
+  daily: '/admin/daily',
+};
+
+const under = (base: string) => (p: string) => p === base || p.startsWith(`${base}/`);
+
+const GROUPS: { title?: string; links: { href: string; label: string; icon: (p: IconProps) => React.ReactNode; match: (p: string) => boolean }[] }[] = [
+  { links: [{ href: '/admin', label: 'الرئيسية', icon: HomeIcon, match: (p) => p === '/admin' }] },
+  {
+    title: 'أقسام العجلة',
+    links: SECTION_KEYS.map((key) => ({
+      href: SECTION_ADMIN[key],
+      label: SECTIONS[key].label,
+      icon: (p: IconProps) => <SectionIcon section={key} {...p} />,
+      match: under(SECTION_ADMIN[key]),
+    })),
+  },
+  {
+    title: 'الموقع',
+    links: [
+      { href: '/admin/students', label: 'الطلاب', icon: UsersIcon, match: under('/admin/students') },
+      { href: '/admin/grades', label: 'المراحل والشعب', icon: LayersIcon, match: under('/admin/grades') },
+      { href: '/admin/quotes', label: 'جمل الصفحة الرئيسية', icon: QuoteIcon, match: under('/admin/quotes') },
+    ],
+  },
 ];
 
 export function AdminShell({ name, children }: { name: string; children: React.ReactNode }) {
@@ -36,15 +60,20 @@ export function AdminShell({ name, children }: { name: string; children: React.R
           <span>لوحة التحكم</span>
         </Link>
         <nav className="ad-nav">
-          {LINKS.map(({ href, label, icon: Icon, match }) => (
-            <Link key={href} href={href} className={match(pathname) ? 'on' : undefined} aria-current={match(pathname) ? 'page' : undefined}>
-              <Icon size={20} />
-              {label}
-            </Link>
+          {GROUPS.map((group, gi) => (
+            <div key={gi} className="ad-nav-group">
+              {group.title && <span className="ad-nav-title">{group.title}</span>}
+              {group.links.map(({ href, label, icon: Icon, match }) => (
+                <Link key={href} href={href} className={match(pathname) ? 'on' : undefined} aria-current={match(pathname) ? 'page' : undefined}>
+                  <Icon size={20} />
+                  {label}
+                </Link>
+              ))}
+            </div>
           ))}
           <div className="sep" />
-          <Link href="/grades">
-            <HomeIcon size={20} />
+          <Link href="/wheel">
+            <WheelIcon size={20} />
             افتح الموقع
           </Link>
         </nav>

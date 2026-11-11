@@ -1,9 +1,9 @@
 import { CheckIcon } from '@/components/ui/icons';
 import { num } from '@/lib/format';
 
-const STEPS = ['اختار مرحلتك', 'اختار لعبة', 'العب واجمع نقط'];
+const STEPS = ['اختار مرحلتك', 'اعمل حسابك', 'لف العجلة'];
 
-/** Shows students where they are: pick a grade, pick a game, then play. */
+/** Shows visitors where they are: pick a grade, make an account, then the wheel takes over. */
 export function Steps({ current }: { current: 1 | 2 | 3 }) {
   return (
     <ol className="steps" aria-label="الخطوات">

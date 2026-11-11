@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: 'حساب جديد' };
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ grade?: string }> }) {
   const { grade } = await searchParams;
   const [session, catalog] = await Promise.all([getSession(), getCatalog()]);
-  if (session.profile) redirect('/grades');
+  if (session.profile) redirect(session.profile.role === 'admin' ? '/admin' : '/wheel');
   const defaultGradeId = catalog.grades.find((g) => g.slug === grade)?.id;
 
   return (
@@ -21,7 +21,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         <h1 className="gp-title">اعمل حسابك</h1>
         <p className="gp-sub">دقيقة واحدة، وهتلاقي ألعاب مرحلتك مستنياك</p>
       </div>
-      <div className="auth-wrap a-fadeup" style={{ animationDelay: '.45s' }}>
+      <div className="auth-wrap a-fadeup" style={{ animationDelay: '.22s' }}>
         <div className="card auth-card">
           {!isSupabaseConfigured && <p className="form-error">{NOT_CONFIGURED}</p>}
           <SignupForm catalog={catalog} defaultGradeId={defaultGradeId} />

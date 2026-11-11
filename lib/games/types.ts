@@ -35,6 +35,8 @@ export interface ReviewItem {
   given?: string;
   expected?: string;
   explanation?: string;
+  /** What went wrong, e.g. "عدم التركيز", taken from the chosen option's explanation. */
+  problem?: string;
 }
 
 export interface ScoreResult {

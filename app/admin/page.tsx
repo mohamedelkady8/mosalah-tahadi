@@ -1,24 +1,49 @@
 import Link from 'next/link';
 import { AdminTop } from '@/components/admin/AdminShell';
-import { BoltIcon, ChartIcon, GamepadIcon, PlusIcon, UsersIcon } from '@/components/ui/icons';
+import { BoltIcon, ChartIcon, GamepadIcon, PlusIcon, SectionIcon, UsersIcon, WheelIcon } from '@/components/ui/icons';
 import { requireAdmin } from '@/lib/admin';
 import { getCatalog } from '@/lib/data';
-import { cairoStartOfDay, num, pct, timeAgo } from '@/lib/format';
+import { cairoDayKey, cairoStartOfDay, countLabel, num, pct, timeAgo } from '@/lib/format';
 import { getDef } from '@/lib/games/registry';
+import { adminHref, kindOf } from '@/lib/kinds';
+import { SECTION_KEYS, SECTIONS, type SectionKey } from '@/lib/sections';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { GameType } from '@/lib/games/types';
+
+const SECTION_ADMIN: Record<SectionKey, { manage: string; add: string; addLabel: string }> = {
+  contests: { manage: '/admin/contests', add: '/admin/contests/new', addLabel: 'مسابقة جديدة' },
+  games: { manage: '/admin/games', add: '/admin/games/new', addLabel: 'لعبة جديدة' },
+  quick: { manage: '/admin/quick', add: '/admin/quick/new', addLabel: 'تحدي جديد' },
+  tips: { manage: '/admin/tips', add: '/admin/tips', addLabel: 'ضيف نصايح' },
+  videos: { manage: '/admin/videos', add: '/admin/videos', addLabel: 'ضيف فيديو' },
+  daily: { manage: '/admin/daily', add: '/admin/daily', addLabel: 'نزّل سؤال النهارده' },
+};
 
 export default async function AdminHome() {
   const { supabase, profile } = await requireAdmin();
   const catalog = await getCatalog();
   const today = cairoStartOfDay().toISOString();
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const nowIso = new Date().toISOString();
+  const recentlyEnded = new Date(Date.now() - 3 * 86400000).toISOString();
 
+  const head = { count: 'exact', head: true } as const;
   const count = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => r.count ?? 0);
+  const contestsQuery = () => supabase.from('games').select('id', head).eq('kind', 'contest').eq('status', 'published');
+  const wheelPromise = Promise.all([
+    count(contestsQuery().gte('ends_at', recentlyEnded)),
+    count(supabase.from('games').select('id', head).eq('kind', 'game').eq('status', 'published')),
+    count(supabase.from('games').select('id', head).eq('kind', 'quick').eq('status', 'published')),
+    count(supabase.from('tips').select('id', head).eq('active', true)),
+    count(supabase.from('videos').select('id', head).eq('active', true)),
+    count(supabase.from('daily_questions').select('id', head).eq('day', cairoDayKey())),
+    count(contestsQuery().lte('starts_at', nowIso).gt('ends_at', nowIso)),
+    count(contestsQuery().gt('starts_at', nowIso)),
+  ]);
   const [students, published, drafts, attempts, attemptsToday, attemptsWeek, perGrade, top, recent, newcomers] = await Promise.all([
     count(supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student')),
-    count(supabase.from('games').select('id', { count: 'exact', head: true }).eq('status', 'published')),
-    count(supabase.from('games').select('id', { count: 'exact', head: true }).eq('status', 'draft')),
+    count(supabase.from('games').select('id', { count: 'exact', head: true }).eq('kind', 'game').eq('status', 'published')),
+    count(supabase.from('games').select('id', { count: 'exact', head: true }).eq('kind', 'game').eq('status', 'draft')),
     count(supabase.from('attempts').select('id', { count: 'exact', head: true })),
     count(supabase.from('attempts').select('id', { count: 'exact', head: true }).gte('created_at', today)),
     count(supabase.from('attempts').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo)),
@@ -36,11 +61,34 @@ export default async function AdminHome() {
     supabase.from('profiles').select('id, full_name, grade_id, created_at').eq('role', 'student').order('created_at', { ascending: false }).limit(6),
   ]);
 
+  const [contests, games, quick, tips, videos, daily, liveContests, upcomingContests] = await wheelPromise;
+  const ready: Record<SectionKey, number> = { contests, games, quick, tips, videos, daily };
+  const readyCount = SECTION_KEYS.filter((key) => ready[key] > 0).length;
+  const readyText: Record<SectionKey, string> = {
+    contests: liveContests
+      ? `${countLabel(liveContests, { one: 'مسابقة شغالة', two: 'مسابقتين شغالين', few: 'مسابقات شغالة', many: 'مسابقة شغالة' })} دلوقتي`
+      : upcomingContests
+        ? countLabel(upcomingContests, { one: 'مسابقة جاية', two: 'مسابقتين جايين', few: 'مسابقات جاية', many: 'مسابقة جاية' })
+        : 'مسابقة خلصت من قريب، والطلاب بيشوفوا الترتيب',
+    games: countLabel(games, { one: 'لعبة منشورة', two: 'لعبتين منشورين', few: 'ألعاب منشورة', many: 'لعبة منشورة' }),
+    quick: countLabel(quick, { one: 'تحدي منشور', two: 'تحديين منشورين', few: 'تحديات منشورة', many: 'تحدي منشور' }),
+    tips: countLabel(tips, { one: 'نصيحة ظاهرة', two: 'نصيحتين ظاهرين', few: 'نصايح ظاهرة', many: 'نصيحة ظاهرة' }),
+    videos: countLabel(videos, { one: 'فيديو ظاهر', two: 'فيديوهين ظاهرين', few: 'فيديوهات ظاهرة', many: 'فيديو ظاهر' }),
+    daily: 'سؤال النهارده نازل',
+  };
+  const emptyText: Record<SectionKey, string> = {
+    contests: 'مفيش مسابقة شغالة أو جاية',
+    games: 'مفيش ألعاب منشورة',
+    quick: 'مفيش تحديات منشورة',
+    tips: 'مفيش نصايح',
+    videos: 'مفيش فيديوهات',
+    daily: 'لسه مفيش سؤال النهارده',
+  };
+
+  type TopGame = { id: string; title: string; type: GameType; kind: string };
   const topIds = (top.data ?? []).map((r) => r.game_id as string);
-  const { data: topGames } = topIds.length
-    ? await supabase.from('games').select('id, title, type').in('id', topIds)
-    : { data: [] as { id: string; title: string; type: GameType }[] };
-  const titleOf = new Map((topGames ?? []).map((g) => [g.id as string, g as { id: string; title: string; type: GameType }]));
+  const { data: topGames } = topIds.length ? await supabase.from('games').select('id, title, type, kind').in('id', topIds) : { data: [] as TopGame[] };
+  const titleOf = new Map((topGames ?? []).map((g) => [g.id as string, g as TopGame]));
   const maxGrade = Math.max(1, ...perGrade.map((p) => p.n));
   const serviceKeyMissing = createAdminClient() === null;
 
@@ -77,6 +125,46 @@ export default async function AdminHome() {
         ))}
       </section>
 
+      <section className="ad-panel">
+        <div className="ad-panel-head">
+          <h2>
+            <WheelIcon size={20} style={{ verticalAlign: '-4px', color: 'var(--wine)' }} /> العجلة النهارده
+          </h2>
+          <span className={`badge ${readyCount === SECTION_KEYS.length ? 'badge-ok' : 'badge-gold'}`}>
+            {num(readyCount)} من {num(SECTION_KEYS.length)} أقسام جاهزة
+          </span>
+        </div>
+        <p className="muted" style={{ marginTop: -4, marginBottom: 14 }}>
+          بعد ما الطالب يسجّل، العجلة بتختارله قسم من الأقسام اللي فيها حاجة لمرحلته. القسم الفاضي مش بيظهر في العجلة لحد ما تضيف فيه.
+        </p>
+        <div className="ad-wheel">
+          {SECTION_KEYS.map((key) => {
+            const n = ready[key];
+            const links = SECTION_ADMIN[key];
+            return (
+              <div key={key} className={`ad-wheel-sec${n ? ' ok' : ''}`}>
+                <span className="ic">
+                  <SectionIcon section={key} size={22} />
+                </span>
+                <div className="grow">
+                  <b>{SECTIONS[key].label}</b>
+                  <small>{n ? readyText[key] : emptyText[key]}</small>
+                </div>
+                {n ? (
+                  <Link href={links.manage} className="btn btn-sm btn-ghost">
+                    إدارة
+                  </Link>
+                ) : (
+                  <Link href={links.add} className="btn btn-sm btn-gold">
+                    <PlusIcon size={16} /> {links.addLabel}
+                  </Link>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       <div className="ad-grid-2">
         <section className="ad-panel">
           <div className="ad-panel-head">
@@ -104,7 +192,7 @@ export default async function AdminHome() {
 
         <section className="ad-panel">
           <div className="ad-panel-head">
-            <h2>أكتر الألعاب لعبًا</h2>
+            <h2>الأكتر لعبًا</h2>
             <Link href="/admin/games" className="btn btn-sm btn-ghost">
               كل الألعاب
             </Link>
@@ -113,16 +201,17 @@ export default async function AdminHome() {
             <ul className="ad-list">
               {top.data.map((r) => {
                 const g = titleOf.get(r.game_id as string);
+                const kind = kindOf(g?.kind);
                 return (
                   <li key={r.game_id as string}>
                     <div className="grow">
                       <b>
-                        <Link href={`/admin/games/${r.game_id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                        <Link href={adminHref(kind, r.game_id as string)} style={{ color: 'inherit', textDecoration: 'none' }}>
                           {g?.title ?? 'لعبة'}
                         </Link>
                       </b>
                       <small>
-                        {g ? getDef(g.type).label : ''} · {num(r.players as number)} طالب
+                        {g ? (kind === 'game' ? getDef(g.type).label : kind === 'quick' ? 'ع السريع' : 'مسابقة') : ''} · {num(r.players as number)} طالب
                       </small>
                     </div>
                     <span className="badge">{num(r.plays as number)} محاولة</span>

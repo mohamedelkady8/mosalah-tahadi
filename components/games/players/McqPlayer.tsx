@@ -2,12 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CheckIcon, XIcon } from '@/components/ui/icons';
-import type { McqAnswers, McqContent } from '@/lib/games/defs/mcq';
+import { pickProblem, type McqAnswers, type McqContent } from '@/lib/games/defs/mcq';
 import { shuffle } from '@/lib/games/random';
-import { digitKey, Feedback, Highlighted, StepHead, Streak, TimerRing, useCountdown } from '../parts';
+import { Feedback, Highlighted, OPTION_LETTERS, optionKey, RichText, StepHead, Streak, TimerRing, useCountdown, WhyText } from '../parts';
 import type { PlayerProps } from '../types';
-
-const LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
 
 export default function McqPlayer({ content, settings, timeUp, onFinish, onProgress }: PlayerProps<McqContent, McqAnswers>) {
   const [order] = useState(() =>
@@ -56,7 +54,7 @@ export default function McqPlayer({ content, settings, timeUp, onFinish, onProgr
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      const n = digitKey(e);
+      const n = optionKey(e);
       if (n && !lockedRef.current && n <= opts.length) lock(opts[n - 1]);
     }
     window.addEventListener('keydown', onKey);
@@ -64,6 +62,10 @@ export default function McqPlayer({ content, settings, timeUp, onFinish, onProgr
   });
 
   const ok = picked === q.correct;
+  const letter = (oi: number) => OPTION_LETTERS[opts.indexOf(oi)];
+  const pickedWhy = picked !== null && !ok ? q.whys[picked] : '';
+  const correctWhy = q.whys[q.correct] || q.explanation;
+  const problem = locked ? pickProblem(q, picked) : null;
 
   return (
     <div className="gm-board">
@@ -71,6 +73,11 @@ export default function McqPlayer({ content, settings, timeUp, onFinish, onProgr
         <Streak count={streak} />
         {limit > 0 && <TimerRing left={left} total={limit} />}
       </StepHead>
+      {q.passage && (
+        <p className="gm-passage">
+          <RichText text={q.passage} />
+        </p>
+      )}
       {q.image && <img className="gm-qimg" src={q.image} alt="" />}
       <h2 className="gm-prompt">
         <Highlighted text={q.prompt} />
@@ -85,7 +92,7 @@ export default function McqPlayer({ content, settings, timeUp, onFinish, onProgr
           }
           return (
             <button key={oi} type="button" className={cls} disabled={locked} onClick={() => lock(oi)}>
-              <span className="k">{LETTERS[k]}</span>
+              <span className="k">{OPTION_LETTERS[k]}</span>
               <span>{q.options[oi]}</span>
               {locked && oi === q.correct && <CheckIcon className="mark" size={22} />}
               {locked && oi === picked && oi !== q.correct && <XIcon className="mark" size={22} />}
@@ -95,12 +102,22 @@ export default function McqPlayer({ content, settings, timeUp, onFinish, onProgr
       </div>
       {locked && (
         <Feedback ok={ok} title={ok ? 'إجابة صح!' : picked === null ? 'الوقت خلص!' : 'إجابة غلط'} onNext={next} last={last}>
+          {problem && <span className="why-problem">مشكلتك: {problem}</span>}
           {!ok && (
             <p>
-              الإجابة الصح: <b>{q.options[q.correct]}</b>
+              الإجابة الصح ({letter(q.correct)}): <b>{q.options[q.correct]}</b>
             </p>
           )}
-          {settings.showExplanations && q.explanation && <p>{q.explanation}</p>}
+          {settings.showExplanations && pickedWhy && (
+            <p>
+              <b>({letter(picked!)})</b> <WhyText text={pickedWhy} />
+            </p>
+          )}
+          {settings.showExplanations && correctWhy && (
+            <p>
+              {q.whys[q.correct] && <b>({letter(q.correct)})</b>} <WhyText text={correctWhy} />
+            </p>
+          )}
         </Feedback>
       )}
     </div>

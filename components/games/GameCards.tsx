@@ -32,15 +32,12 @@ export function GameCards({
 }) {
   return (
     <div className="gm-cards">
-      {games.map((g, i) => {
+      {games.map((g) => {
         const def = getDef(g.type);
         const b = best?.[g.id];
         const p = b ? percent(b.score, b.max) : 0;
         return (
-          <Link key={g.id} href={`${hrefPrefix}${g.slug}`} className="gp-card gm-game" style={{ animationDelay: `${Math.min(0.1 + i * 0.05, 0.8).toFixed(2)}s` }}>
-            <span className="shine-wrap" aria-hidden="true">
-              <span className="shine" style={{ animationDelay: `${(2 + (i % 6) * 0.6).toFixed(1)}s` }} />
-            </span>
+          <Link key={g.id} href={`${hrefPrefix}${g.slug}`} className="gp-card gm-game">
             <span className={`gicon${g.cover_url ? ' has-cover' : ''}`} aria-hidden="true">
               {g.cover_url ? (
                 // eslint-disable-next-line @next/next/no-img-element

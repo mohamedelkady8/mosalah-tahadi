@@ -71,6 +71,23 @@ export function blankedText(text: string): string {
     .trim();
 }
 
+export type RichPart = { text: string; style: 'plain' | 'mark' | 'under' };
+
+/** "فقد تقودك أفكار [أُخَر] إلى «حلّ»" -> plain, underlined ([ ]) and highlighted (« ») parts. */
+export function richParts(text: string): RichPart[] {
+  const parts: RichPart[] = [];
+  const re = /\[([^\]\n]+)\]|«([^»]*)»/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m.index > last) parts.push({ text: text.slice(last, m.index), style: 'plain' });
+    parts.push(m[1] !== undefined ? { text: m[1], style: 'under' } : { text: m[2], style: 'mark' });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), style: 'plain' });
+  return parts;
+}
+
 /** Splits "كتبَ «الطالبُ» الدرسَ" into plain and highlighted parts. */
 export function highlightParts(text: string): { text: string; mark: boolean }[] {
   const parts: { text: string; mark: boolean }[] = [];

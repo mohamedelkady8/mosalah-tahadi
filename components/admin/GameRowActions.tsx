@@ -6,8 +6,21 @@ import { useTransition } from 'react';
 import { CopyIcon, EditIcon, EyeIcon, TrashIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
 import { deleteGame, duplicateGame, setGameStatus, type ActionResult } from '@/lib/actions/admin';
+import { adminHref, studentHref, type GameKind } from '@/lib/kinds';
 
-export function GameRowActions({ id, slug, title, status }: { id: string; slug: string; title: string; status: 'draft' | 'published' }) {
+export function GameRowActions({
+  id,
+  slug,
+  title,
+  status,
+  kind = 'game',
+}: {
+  id: string;
+  slug: string;
+  title: string;
+  status: 'draft' | 'published';
+  kind?: GameKind;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
@@ -34,11 +47,11 @@ export function GameRowActions({ id, slug, title, status }: { id: string; slug: 
       >
         {status === 'published' ? 'إلغاء النشر' : 'انشر'}
       </button>
-      <Link href={`/admin/games/${id}`} className="icon-btn" title="تعديل" aria-label={`تعديل ${title}`}>
+      <Link href={adminHref(kind, id)} className="icon-btn" title="تعديل" aria-label={`تعديل ${title}`}>
         <EditIcon size={18} />
       </Link>
       {status === 'published' && (
-        <Link href={`/play/${slug}`} className="icon-btn" title="افتحها زي الطالب" aria-label={`افتح ${title} زي الطالب`} target="_blank">
+        <Link href={studentHref(kind, slug)} className="icon-btn" title="افتح زي الطالب" aria-label={`افتح ${title} زي الطالب`} target="_blank">
           <EyeIcon size={18} />
         </Link>
       )}
@@ -48,7 +61,7 @@ export function GameRowActions({ id, slug, title, status }: { id: string; slug: 
         title="اعمل نسخة"
         aria-label={`اعمل نسخة من ${title}`}
         disabled={pending}
-        onClick={() => run(() => duplicateGame(id), (r) => router.push(`/admin/games/${r.id}`))}
+        onClick={() => run(() => duplicateGame(id), (r) => (r.id ? router.push(adminHref(kind, r.id)) : router.refresh()))}
       >
         <CopyIcon size={18} />
       </button>
@@ -59,7 +72,7 @@ export function GameRowActions({ id, slug, title, status }: { id: string; slug: 
         aria-label={`امسح ${title}`}
         disabled={pending}
         onClick={() => {
-          if (confirm(`تمسح «${title}»؟ كل محاولات الطلاب فيها هتتمسح ونقطهم هتتحسب من جديد.`)) run(() => deleteGame(id));
+          if (confirm(`تمسح «${title}»؟ كل محاولات الطلاب هتتمسح ونقطهم هتتحسب من جديد.`)) run(() => deleteGame(id));
         }}
       >
         <TrashIcon size={18} />

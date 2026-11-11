@@ -5,19 +5,10 @@ import type { GradeWithTracks } from '@/lib/types';
 export function GradeCards({ grades, myGradeId }: { grades: GradeWithTracks[]; myGradeId?: string | null }) {
   return (
     <div className="grid">
-      {grades.map((g, i) => {
+      {grades.map((g) => {
         const mine = g.id === myGradeId;
         return (
-          <TransitionLink
-            key={g.id}
-            href={`/grades/${g.slug}`}
-            className={`gp-card gp-grade${mine ? ' is-mine' : ''}`}
-            data-reveal=""
-            style={{ animationDelay: `${(0.45 + i * 0.1).toFixed(2)}s` }}
-          >
-            <span className="shine-wrap" aria-hidden="true">
-              <span className="shine" style={{ animationDelay: `${(2 + i * 0.6).toFixed(1)}s` }} />
-            </span>
+          <TransitionLink key={g.id} href={`/grades/${g.slug}`} className={`gp-card gp-grade${mine ? ' is-mine' : ''}`} prefetch>
             <span className="gicon" aria-hidden="true">
               <GradeIcon icon={g.icon} />
             </span>

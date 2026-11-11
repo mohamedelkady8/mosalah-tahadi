@@ -5,6 +5,8 @@ import { uid } from '../random';
 const question = z
   .object({
     id: z.string().min(1),
+    /** Optional text the question is about. Words in [ ] are underlined, words in « » highlighted. */
+    passage: z.string().trim().max(1500, 'النص طويل أوي.').default(''),
     prompt: z.string().trim().min(1, 'اكتب نص السؤال.').max(500, 'نص السؤال طويل أوي.'),
     image: z.string().trim().max(1000).default(''),
     options: z
@@ -13,6 +15,8 @@ const question = z
       .max(6, 'أقصى عدد اختيارات ٦.'),
     correct: z.number().int().min(0),
     explanation: z.string().trim().max(600).default(''),
+    /** One explanation per option, same order. A wrong one may name the mistake: "(مشكلتك: التسرع)". */
+    whys: z.array(z.string().trim().max(600, 'شرح الاختيار طويل أوي.')).max(6).default([]),
   })
   .refine((q) => q.correct < q.options.length, { message: 'اختار الإجابة الصح.', path: ['correct'] });
 
@@ -30,8 +34,23 @@ export type McqContent = z.output<typeof mcqContent>;
 export type McqQuestion = McqContent['questions'][number];
 export type McqAnswers = z.output<typeof mcqAnswers>;
 
+export const TIMEOUT_PROBLEM = 'خلص الوقت قبل ما تجاوب';
+
+/** "خطأ؛ (مشكلتك: عدم التركيز)؛ لأن ..." -> "عدم التركيز" */
+export function problemOf(why: string | undefined): string | null {
+  const m = why ? /مشكلتك\s*[:：]\s*([^)）؛;\n]+)/.exec(why) : null;
+  return m ? m[1].trim() || null : null;
+}
+
+/** The mistake behind a wrong pick, or null when it was right or the option names none. */
+export function pickProblem(q: McqQuestion, choice: number | null): string | null {
+  if (choice === q.correct) return null;
+  if (choice === null) return TIMEOUT_PROBLEM;
+  return problemOf(q.whys[choice]);
+}
+
 export function newMcqQuestion(): McqQuestion {
-  return { id: uid(), prompt: '', image: '', options: ['', '', '', ''], correct: 0, explanation: '' };
+  return { id: uid(), passage: '', prompt: '', image: '', options: ['', '', '', ''], correct: 0, explanation: '', whys: [] };
 }
 
 export const mcqDef: GameDef<McqContent, McqAnswers> = {
@@ -58,7 +77,8 @@ export const mcqDef: GameDef<McqContent, McqAnswers> = {
         correct: ok,
         given: choice === null ? NOT_ANSWERED : (q.options[choice] ?? NOT_ANSWERED),
         expected: q.options[q.correct],
-        explanation: q.explanation || undefined,
+        explanation: q.whys[q.correct] || q.explanation || undefined,
+        problem: pickProblem(q, choice) ?? undefined,
       };
     });
     return makeResult(correct, content.questions.length, settings, review);

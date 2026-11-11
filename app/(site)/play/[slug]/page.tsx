@@ -1,21 +1,23 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import GameShell from '@/components/games/GameShell';
 import type { PlayableGame } from '@/components/games/types';
 import { SitePage } from '@/components/site/SiteHeader';
 import { GamepadIcon } from '@/components/ui/icons';
 import { getCatalog, requireSession } from '@/lib/data';
+import { studentHref, type GameKind } from '@/lib/kinds';
 import { createClient } from '@/lib/supabase/server';
 
 type Params = Promise<{ slug: string }>;
 
-const COLUMNS = 'id, slug, title, description, type, content, settings, item_count, cover_url, topic, difficulty, status';
+const COLUMNS = 'id, slug, title, description, type, content, settings, item_count, cover_url, topic, difficulty, status, kind';
 
 async function loadGame(slug: string) {
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) return null;
   const supabase = await createClient();
   const { data } = await supabase.from('games').select(COLUMNS).eq('slug', slug).maybeSingle();
-  return data as (PlayableGame & { status: 'draft' | 'published' }) | null;
+  return data as (PlayableGame & { status: 'draft' | 'published'; kind: GameKind }) | null;
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -48,6 +50,7 @@ export default async function PlayPage({ params }: { params: Params }) {
       </SitePage>
     );
   }
+  if (game.kind !== 'game') redirect(studentHref(game.kind, game.slug));
 
   const supabase = await createClient();
   const [{ count }, { data: best }] = await Promise.all([

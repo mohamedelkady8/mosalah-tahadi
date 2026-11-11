@@ -36,7 +36,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
       <SitePage back={{ href: '/grades', label: 'المراحل' }}>
         <p className="hello">مين الأول في مرحلتك؟</p>
         <h1 className="gp-title">لوحة الشرف</h1>
-        <div className="card empty st-panel a-fadeup" style={{ animationDelay: '.35s', maxWidth: 560 }}>
+        <div className="card empty st-panel a-fadeup" style={{ animationDelay: '.18s', maxWidth: 560 }}>
           <div className="e-ic">
             <TrophyIcon size={30} />
           </div>
@@ -92,14 +92,14 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
   const order = [podium[1], podium[0], podium[2]];
 
   return (
-    <SitePage back={{ href: '/games', label: 'الألعاب' }}>
+    <SitePage back={{ href: '/wheel', label: 'العجلة' }}>
       <p className="hello">{me ? `إنت رقم ${num(me.rank)} ${period === 'week' ? 'الأسبوع ده' : 'من الأول'}` : 'نافس زمايلك واطلع الأول'}</p>
       <h1 className="gp-title">لوحة الشرف</h1>
       <p className="gp-sub">
         {period === 'week' ? `نقط الأسبوع ده، من السبت ${formatDate(since!)}.` : 'مجموع أحسن نتيجة في كل لعبة من أول ما بدأت.'} الترتيب بيتحدّث أول ما حد يخلّص لعبة.
       </p>
 
-      <section className="lb-board a-fadeup" style={{ animationDelay: '.4s' }} aria-label="الترتيب">
+      <section className="lb-board a-fadeup" style={{ animationDelay: '.2s' }} aria-label="الترتيب">
         <div className="lb-controls">
           <div className="tabs tabs-light" role="group" aria-label="المدة">
             <Link href={href({ period: 'week' })} className={period === 'week' ? 'on' : ''} aria-current={period === 'week' ? 'page' : undefined}>
@@ -146,7 +146,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
             <ol className="lb-podium" aria-label="المراكز الأولى">
               {order.map((r, i) =>
                 r ? (
-                  <li key={r.user_id} className={`lb-step r${Math.min(r.rank, 3)}${r.user_id === profile.id ? ' me' : ''}`} style={{ animationDelay: `${0.5 + i * 0.12}s` }}>
+                  <li key={r.user_id} className={`lb-step r${Math.min(r.rank, 3)}${r.user_id === profile.id ? ' me' : ''}`} style={{ animationDelay: `${0.25 + i * 0.06}s` }}>
                     <span className="av" aria-hidden="true">
                       {r.full_name.trim().slice(0, 1)}
                     </span>

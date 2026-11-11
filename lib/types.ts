@@ -1,4 +1,5 @@
 import type { GameType } from '@/lib/games/types';
+import type { GameKind } from '@/lib/kinds';
 
 export type UserRole = 'student' | 'admin';
 export type GameStatus = 'draft' | 'published';
@@ -56,6 +57,10 @@ export interface GameRow {
   topic: string | null;
   difficulty: number;
   status: GameStatus;
+  kind: GameKind;
+  starts_at: string | null;
+  ends_at: string | null;
+  prize: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -90,4 +95,34 @@ export interface Quote {
   text: string;
   active: boolean;
   sort_order: number;
+}
+
+export interface Tip {
+  id: string;
+  body: string;
+  grade_id: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+export interface Video {
+  id: string;
+  title: string;
+  url: string;
+  description: string;
+  cover_url: string | null;
+  grade_id: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+export interface DailyQuestion {
+  id: string;
+  /** YYYY-MM-DD, Egypt's calendar. */
+  day: string;
+  grade_id: string | null;
+  question: string;
+  image_url: string | null;
+  post_url: string | null;
+  created_at: string;
 }

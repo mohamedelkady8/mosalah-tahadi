@@ -26,7 +26,7 @@ export function starsFor(p: number): number {
 const TITLES = ['ولا يهمك، جرّب تاني', 'مش بطال، تقدر أحسن', 'شغل حلو!', 'عاش يا بطل!'];
 const CONFETTI_COLORS = ['#E8C46F', '#7A2A3A', '#F4E6CF', '#2F8F5B', '#1F6FB5', '#FFF6E8'];
 
-function Confetti() {
+export function Confetti() {
   const pieces = useMemo(
     () =>
       Array.from({ length: 42 }, (_, i) => ({
@@ -68,7 +68,7 @@ export function ResultView({
   onClose,
 }: {
   outcome: Outcome;
-  mode: 'play' | 'preview' | 'practice' | 'daily';
+  mode: 'play' | 'preview' | 'practice';
   canReplay: boolean;
   replayNote?: string;
   onReplay: () => void;
@@ -208,6 +208,7 @@ export function ResultView({
                       الصح: <b>{r.expected}</b>
                     </div>
                   )}
+                  {r.problem && <span className="why-problem">مشكلتك: {r.problem}</span>}
                   {r.explanation && <div className="ex">{r.explanation}</div>}
                 </div>
               </div>

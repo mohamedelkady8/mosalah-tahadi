@@ -41,8 +41,13 @@ export function usePageSlide() {
           new Promise<void>((resolve) => {
             finishPending?.();
             finishPending = resolve;
-            // The browser would abort a transition stuck on a slow network; give up on the animation first.
-            window.setTimeout(resolve, 2500);
+            // The screen stays frozen until the next page renders; if it's slow, show it without the slide instead.
+            window.setTimeout(() => {
+              if (finishPending !== resolve) return;
+              finishPending = null;
+              transition.skipTransition();
+              resolve();
+            }, 1200);
             router.push(href);
           }),
       );
@@ -62,12 +67,27 @@ export function isPlainClick(e: MouseEvent<HTMLAnchorElement>) {
 
 type TransitionLinkProps = Omit<ComponentProps<typeof Link>, 'href'> & { href: string; dir?: SlideDirection };
 
-export function TransitionLink({ href, dir = 'up', onClick, ...rest }: TransitionLinkProps) {
+export function TransitionLink({ href, dir = 'up', onClick, onPointerEnter, onTouchStart, onFocus, ...rest }: TransitionLinkProps) {
   const slide = usePageSlide();
+  const router = useRouter();
+  // Load the whole next page on intent so the slide can start right away.
+  const warm = () => router.prefetch(href);
   return (
     <Link
       {...rest}
       href={href}
+      onPointerEnter={(e) => {
+        onPointerEnter?.(e);
+        warm();
+      }}
+      onTouchStart={(e) => {
+        onTouchStart?.(e);
+        warm();
+      }}
+      onFocus={(e) => {
+        onFocus?.(e);
+        warm();
+      }}
       onClick={(e) => {
         onClick?.(e);
         if (!isPlainClick(e) || rest.target === '_blank') return;

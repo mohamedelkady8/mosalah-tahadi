@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCatalog, getSession } from '@/lib/data';
 
-/** The wheel's "ألعاب" link: your grade's games, or the practice games for visitors. */
+/** The wheel's "ألعاب" section: your grade's games, or the practice games for visitors. */
 export default async function GamesRedirect() {
   const [{ profile }, catalog] = await Promise.all([getSession(), getCatalog()]);
   if (!profile) redirect('/try');

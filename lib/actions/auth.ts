@@ -39,13 +39,11 @@ function resolveGradeTrack(catalog: Catalog, gradeId: string, trackId: string) {
   return { grade, trackId } as const;
 }
 
+/** Students start at the wheel, which picks what they do next. */
 async function destinationFor(userId: string): Promise<string> {
   const supabase = await createClient();
-  const { data } = await supabase.from('profiles').select('role, grades(slug)').eq('id', userId).maybeSingle();
-  if (!data) return '/grades';
-  if (data.role === 'admin') return '/admin';
-  const grade = data.grades as unknown as { slug: string } | null;
-  return grade?.slug ? `/grades/${grade.slug}` : '/grades';
+  const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
+  return data?.role === 'admin' ? '/admin' : '/wheel';
 }
 
 export async function signInAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -135,13 +133,13 @@ export async function signUpAction(_prev: FormState, formData: FormData): Promis
     const { data, error } = await supabase.auth.signUp({
       email: id.email,
       password: input.password,
-      options: { data: metadata, emailRedirectTo: `${origin}/auth/callback?next=/grades/${resolved.grade.slug}` },
+      options: { data: metadata, emailRedirectTo: `${origin}/auth/callback?next=/wheel` },
     });
     if (error) return { error: authErrorMessage(error), values };
     if (!data.session) return { message: 'بعتنالك إيميل تأكيد. افتحه ودوس على اللينك عشان تكمّل.' };
   }
 
-  redirect(`/grades/${resolved.grade.slug}?welcome=1`);
+  redirect('/wheel?welcome=1');
 }
 
 export async function signOutAction() {

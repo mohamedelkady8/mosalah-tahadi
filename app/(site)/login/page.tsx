@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'تسجيل الدخول' };
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
   const session = await getSession();
-  if (session.profile) redirect(safeNext(next) ?? '/grades');
+  if (session.profile) redirect(safeNext(next) ?? (session.profile.role === 'admin' ? '/admin' : '/wheel'));
 
   return (
     <SitePage back={{ href: '/grades' }}>
@@ -21,7 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <h1 className="gp-title">سجّل دخولك</h1>
         <p className="gp-sub">ادخل بحسابك وكمّل من مكان ما وقفت</p>
       </div>
-      <div className="auth-wrap a-fadeup" style={{ animationDelay: '.45s' }}>
+      <div className="auth-wrap a-fadeup" style={{ animationDelay: '.22s' }}>
         <div className="card auth-card">
           {!isSupabaseConfigured && <p className="form-error">{NOT_CONFIGURED}</p>}
           <LoginForm next={safeNext(next) ?? undefined} />

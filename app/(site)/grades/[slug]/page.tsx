@@ -4,15 +4,13 @@ import { notFound } from 'next/navigation';
 import { GameBrowser } from '@/components/games/GameBrowser';
 import { SitePage } from '@/components/site/SiteHeader';
 import { Steps } from '@/components/site/Steps';
-import { BoltIcon, GamepadIcon, LockIcon, StarIcon, TrophyIcon } from '@/components/ui/icons';
-import { FlashToast } from '@/components/ui/Toast';
+import { GamepadIcon, LockIcon, StarIcon, TrophyIcon, WheelIcon } from '@/components/ui/icons';
 import { getCatalog, getSession, gradeName, trackName } from '@/lib/data';
 import { firstName, num } from '@/lib/format';
 import { bestScores, gamesForGrade } from '@/lib/student';
 import { createClient } from '@/lib/supabase/server';
 
 type Params = Promise<{ slug: string }>;
-type Search = Promise<{ welcome?: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
@@ -20,8 +18,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return { title: grade ? `ألعاب ${grade.name}` : 'المرحلة' };
 }
 
-export default async function GradeGamesPage({ params, searchParams }: { params: Params; searchParams: Search }) {
-  const [{ slug }, { welcome }] = await Promise.all([params, searchParams]);
+export default async function GradeGamesPage({ params }: { params: Params }) {
+  const { slug } = await params;
   const [catalog, { profile }] = await Promise.all([getCatalog(), getSession()]);
   const grade = catalog.grades.find((g) => g.slug === slug);
   if (!grade) notFound();
@@ -32,13 +30,16 @@ export default async function GradeGamesPage({ params, searchParams }: { params:
       <SitePage back={{ href: '/grades', label: 'المراحل' }}>
         <p className="hello">{grade.subtitle}</p>
         <h1 className="gp-title">{grade.name}</h1>
-        <p className="gp-sub">ألعاب في العربي معمولة مخصوص لمرحلتك: نحو، بلاغة، أدب، وقراءة.</p>
-        <div className="card empty st-panel a-fadeup" style={{ animationDelay: '.45s', maxWidth: 560 }}>
+        <Steps current={2} />
+        <div className="card empty st-panel a-fadeup" style={{ animationDelay: '.22s', maxWidth: 560 }}>
           <div className="e-ic">
-            <GamepadIcon size={30} />
+            <WheelIcon size={30} />
           </div>
-          <h3>ألعابك مستنياك</h3>
-          <p>سجّل في ثانية برقم موبايلك أو إيميلك، وهتلاقي ألعاب {grade.name} هنا، ونقطك هتدخلك لوحة الشرف.</p>
+          <h3>اعمل حسابك وابدأ</h3>
+          <p>
+            سجّل في ثانية برقم موبايلك أو إيميلك، وهتلاقي عجلة بتختارلك كل يوم حاجة جديدة من التيم: ألعاب، «ع السريع»، مسابقات،
+            نصايح، فيديوهات، وسؤال اليوم.
+          </p>
           <div className="row" style={{ justifyContent: 'center' }}>
             <Link href={`/signup?grade=${grade.slug}`} className="btn btn-gold btn-lg">
               اعمل حساب
@@ -62,7 +63,7 @@ export default async function GradeGamesPage({ params, searchParams }: { params:
       <SitePage back={{ href: '/grades', label: 'المراحل' }}>
         <p className="hello">{grade.subtitle}</p>
         <h1 className="gp-title">{grade.name}</h1>
-        <div className="card empty st-panel a-fadeup" style={{ animationDelay: '.3s', maxWidth: 560 }}>
+        <div className="card empty st-panel a-fadeup" style={{ animationDelay: '.15s', maxWidth: 560 }}>
           <div className="e-ic">
             <LockIcon size={30} />
           </div>
@@ -102,19 +103,16 @@ export default async function GradeGamesPage({ params, searchParams }: { params:
   const played = Object.keys(best).length;
 
   return (
-    <SitePage back={{ href: '/grades', label: 'المراحل' }}>
-      {welcome && <FlashToast message={`أهلًا يا ${firstName(profile.full_name)}! حسابك اتعمل، يلا نلعب.`} />}
+    <SitePage back={isAdmin ? { href: '/grades', label: 'المراحل' } : { href: '/wheel', label: 'العجلة' }}>
       <p className="hello">{isAdmin ? 'إنت شايف الصفحة زي طلاب المرحلة دي' : `أهلًا يا ${firstName(profile.full_name)}`}</p>
-      <h1 className="gp-title">{grade.name}</h1>
+      <h1 className="gp-title">{isAdmin ? grade.name : 'ألعاب'}</h1>
       <p className="gp-sub">
-        {grade.subtitle}
-        {showTrack && !isAdmin && profile.track_id ? ` · ${trackName(catalog, profile.track_id)}` : ''}
+        {isAdmin ? grade.subtitle : `ألعاب ${grade.name}${showTrack && profile.track_id ? ` · ${trackName(catalog, profile.track_id)}` : ''}، اتعلم العربي وإنت بتلعب.`}
       </p>
 
       {!isAdmin && (
         <>
-          <Steps current={2} />
-          <div className="st-bar a-fadeup" style={{ animationDelay: '.4s' }}>
+          <div className="st-bar a-fadeup" style={{ animationDelay: '.2s' }}>
             <div className="st-item">
               <b>
                 <StarIcon size={18} filled /> {num(profile.points)}
@@ -134,8 +132,8 @@ export default async function GradeGamesPage({ params, searchParams }: { params:
               </b>
               <span>ترتيبك</span>
             </Link>
-            <Link href="/daily" className="btn btn-gold btn-sm">
-              <BoltIcon size={16} /> سؤال اليوم
+            <Link href="/wheel" className="btn btn-gold btn-sm">
+              <WheelIcon size={16} /> لف العجلة
             </Link>
           </div>
         </>

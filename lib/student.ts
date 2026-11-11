@@ -21,7 +21,13 @@ export async function gamesForGrade(supabase: Client, gradeId: string, profile: 
     ),
   ];
   if (!ids.length) return [];
-  const { data } = await supabase.from('games').select(CARD_COLUMNS).in('id', ids).eq('status', 'published').order('published_at', { ascending: false });
+  const { data } = await supabase
+    .from('games')
+    .select(CARD_COLUMNS)
+    .in('id', ids)
+    .eq('kind', 'game')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false });
   return ((data ?? []) as (GameCardData & { description: string | null })[]).map((g) => ({ ...g, description: g.description ?? '' }));
 }
 

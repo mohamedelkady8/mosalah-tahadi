@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import { GradeCards } from '@/components/grades/GradeCards';
-import { Wheel } from '@/components/grades/Wheel';
-import { RevealOnScroll } from '@/components/motion/RevealOnScroll';
 import { SitePage } from '@/components/site/SiteHeader';
 import { Steps } from '@/components/site/Steps';
 import { QuoteIcon } from '@/components/ui/icons';
@@ -18,11 +16,7 @@ export default async function GradesPage() {
   return (
     <SitePage back={{ href: '/' }}>
       <p className="hello">{name ? `أهلًا يا ${name} في تيم حمثلاح` : 'أهلًا بيك في تيم حمثلاح'}</p>
-      <h1 className="gp-title">اختار مرحلتك</h1>
-      <Steps current={1} />
-      <GradeCards grades={grades} myGradeId={session.profile?.grade_id} />
-      <Wheel />
-      <div className="quote" data-reveal="">
+      <div className="quote quote-hero">
         <span className="qicon" aria-hidden="true">
           <QuoteIcon size={20} style={{ color: '#E8C46F' }} />
         </span>
@@ -31,7 +25,9 @@ export default async function GradesPage() {
           <p className="qtext">{quote}</p>
         </div>
       </div>
-      <RevealOnScroll />
+      <h1 className="gp-title gp-pick">اختار مرحلتك</h1>
+      <Steps current={1} />
+      <GradeCards grades={grades} myGradeId={session.profile?.grade_id} />
     </SitePage>
   );
 }

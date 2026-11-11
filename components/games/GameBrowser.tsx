@@ -34,7 +34,7 @@ export function GameBrowser({ games, best }: { games: GameCardData[]; best: Reco
 
   if (!games.length) {
     return (
-      <div className="card empty st-panel a-fadeup" style={{ animationDelay: '.5s' }}>
+      <div className="card empty st-panel a-fadeup" style={{ animationDelay: '.25s' }}>
         <div className="e-ic">
           <GamepadIcon size={30} />
         </div>
@@ -51,7 +51,7 @@ export function GameBrowser({ games, best }: { games: GameCardData[]; best: Reco
 
   return (
     <>
-      <div className="gm-filter a-fadeup" style={{ animationDelay: '.5s' }}>
+      <div className="gm-filter a-fadeup" style={{ animationDelay: '.22s' }}>
         {doneCount > 0 && (
           <div className="tabs" role="group" aria-label="اللي لعبته">
             {(

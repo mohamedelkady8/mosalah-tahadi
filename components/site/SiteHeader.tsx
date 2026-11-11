@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getSession } from '@/lib/data';
 import { firstName } from '@/lib/format';
 import { TransitionLink } from '@/components/motion/PageTransition';
-import { ChartIcon, UserIcon } from '@/components/ui/icons';
+import { ChartIcon, UserIcon, WheelIcon } from '@/components/ui/icons';
 
 export function BackLink({ href, label = 'رجوع' }: { href: string; label?: string }) {
   return (
@@ -15,7 +15,8 @@ export function BackLink({ href, label = 'رجوع' }: { href: string; label?: s
   );
 }
 
-export async function HeaderActions({ children }: { children?: React.ReactNode }) {
+/** `wheel`: show students the way back to their wheel (off on the wheel itself and when the back link goes there). */
+export async function HeaderActions({ children, wheel = true }: { children?: React.ReactNode; wheel?: boolean }) {
   const { profile } = await getSession();
   return (
     <div className="head-actions">
@@ -24,6 +25,12 @@ export async function HeaderActions({ children }: { children?: React.ReactNode }
           <ChartIcon size={18} />
           <span className="pill-text">لوحة التحكم</span>
         </Link>
+      )}
+      {wheel && profile?.role === 'student' && (
+        <TransitionLink href="/wheel" dir="down" className="pill pill-gold" title="العجلة">
+          <WheelIcon size={18} />
+          <span className="pill-text">العجلة</span>
+        </TransitionLink>
       )}
       {profile ? (
         <Link href="/me" className="pill" title="صفحتي">
@@ -51,25 +58,17 @@ export function Logo() {
 }
 
 /** Header of the inner pages, same markup as the original grades page. */
-export function SiteHeader({ back }: { back?: { href: string; label?: string } }) {
+export function SiteHeader({ back, wheelPill = true }: { back?: { href: string; label?: string }; wheelPill?: boolean }) {
   return (
     <header className="gp-head">
       <Logo />
-      <HeaderActions>{back && <BackLink href={back.href} label={back.label} />}</HeaderActions>
+      <HeaderActions wheel={wheelPill && back?.href !== '/wheel'}>{back && <BackLink href={back.href} label={back.label} />}</HeaderActions>
     </header>
   );
 }
 
-export function Grain({ id = 'gpGrain' }: { id?: string }) {
-  return (
-    <svg aria-hidden="true" className="grain">
-      <filter id={id}>
-        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={2} stitchTiles="stitch" />
-        <feColorMatrix type="saturate" values="0" />
-      </filter>
-      <rect width="100%" height="100%" filter={`url(#${id})`} />
-    </svg>
-  );
+export function Grain() {
+  return <div aria-hidden="true" className="grain" />;
 }
 
 /** Full-page wrapper with the gradient, grain, header and footer of the original grades page. */
@@ -77,15 +76,17 @@ export function SitePage({
   children,
   back,
   mainClassName = 'gp-main',
+  wheelPill = true,
 }: {
   children: React.ReactNode;
   back?: { href: string; label?: string };
   mainClassName?: string;
+  wheelPill?: boolean;
 }) {
   return (
     <div className="gp-root" dir="rtl">
       <Grain />
-      <SiteHeader back={back} />
+      <SiteHeader back={back} wheelPill={wheelPill} />
       <main className={mainClassName}>{children}</main>
       <footer className="gp-foot">We Don’t Study Alone.</footer>
     </div>

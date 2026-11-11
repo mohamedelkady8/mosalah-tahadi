@@ -9,6 +9,7 @@ import { getCatalog, gradeName, trackName } from '@/lib/data';
 import { durationText, formatDate, formatDateTime, num, pct } from '@/lib/format';
 import { getDef } from '@/lib/games/registry';
 import type { GameType } from '@/lib/games/types';
+import { adminHref, kindOf } from '@/lib/kinds';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Profile } from '@/lib/types';
 
@@ -23,7 +24,7 @@ export default async function AdminStudent({ params }: { params: Promise<{ id: s
     supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
     supabase
       .from('attempts')
-      .select('id, game_id, score, max_score, correct_count, total_count, duration_ms, created_at, games(title, type, slug)', { count: 'exact' })
+      .select('id, game_id, score, max_score, correct_count, total_count, duration_ms, created_at, games(title, type, slug, kind)', { count: 'exact' })
       .eq('user_id', id)
       .order('created_at', { ascending: false })
       .limit(100),
@@ -85,14 +86,15 @@ export default async function AdminStudent({ params }: { params: Promise<{ id: s
                 </thead>
                 <tbody>
                   {list.map((a) => {
-                    const g = a.games as unknown as { title: string; type: GameType } | null;
+                    const g = a.games as unknown as { title: string; type: GameType; kind: string } | null;
+                    const kind = kindOf(g?.kind);
                     return (
                       <tr key={a.id as string}>
                         <td>
-                          <Link href={`/admin/games/${a.game_id}`} className="t-title">
+                          <Link href={adminHref(kind, a.game_id as string)} className="t-title">
                             {g?.title ?? 'لعبة اتمسحت'}
                           </Link>
-                          {g && <span className="t-sub">{getDef(g.type).label}</span>}
+                          {g && <span className="t-sub">{kind === 'game' ? getDef(g.type).label : kind === 'quick' ? 'ع السريع' : 'مسابقة'}</span>}
                         </td>
                         <td className="num">
                           {num(a.score as number)}/{num(a.max_score as number)} <span className="badge badge-gold">{pct(a.score as number, a.max_score as number)}</span>

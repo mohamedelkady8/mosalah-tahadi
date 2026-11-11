@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ChevronEnd, FlameIcon } from '@/components/ui/icons';
 import { num } from '@/lib/format';
-import { highlightParts } from '@/lib/games/text';
+import { highlightParts, richParts } from '@/lib/games/text';
 
 /** Per-question countdown. Restarts when `resetKey` changes and stops while `running` is false. */
 export function useCountdown(seconds: number, running: boolean, resetKey: unknown, onExpire: () => void): number {
@@ -122,6 +122,64 @@ export function Highlighted({ text }: { text: string }) {
       )}
     </>
   );
+}
+
+/** Renders [..] parts as underlined and «..» parts as highlighted. */
+export function RichText({ text }: { text: string }) {
+  return (
+    <>
+      {richParts(text).map((p, i) =>
+        p.style === 'under' ? (
+          <u key={i} className="gm-ul">
+            {p.text}
+          </u>
+        ) : p.style === 'mark' ? (
+          <mark key={i} className="gm-hl">
+            {p.text}
+          </mark>
+        ) : (
+          <span key={i}>{p.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+/** An option's explanation: the leading "صواب؛" / "خطأ؛" in bold and "(مشكلتك: ...)" as a tag, or left out with `hideProblem`. */
+export function WhyText({ text, hideProblem = false }: { text: string; hideProblem?: boolean }) {
+  const lead = /^\s*(صواب|خطأ|صح|غلط)\s*[؛;:]\s*/.exec(text);
+  const rest = lead ? text.slice(lead[0].length) : text;
+  const pieces = rest.split(/(\(\s*مشكلتك\s*[:：][^)]*\)\s*[؛;]?)/);
+  return (
+    <>
+      {lead && <b className={lead[1] === 'صواب' || lead[1] === 'صح' ? 'why-ok' : 'why-bad'}>{lead[1]}؛ </b>}
+      {pieces.map((p, i) =>
+        i % 2 ? (
+          !hideProblem && (
+            <span key={i} className="why-problem">
+              {p.replace(/^\(\s*|\)\s*[؛;]?$/g, '')}
+            </span>
+          )
+        ) : (
+          <span key={i}>{p}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+export const OPTION_LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
+
+const LETTER_KEYS: Record<string, number> = { أ: 1, ا: 1, ب: 2, ج: 3, د: 4 };
+
+/** Option picked from the keyboard: 1-6 (Western or Arabic digits) or أ ب ج د. 0 when none. */
+export function optionKey(e: KeyboardEvent): number {
+  const n = digitKey(e);
+  if (n) return n;
+  if (e.altKey || e.ctrlKey || e.metaKey) return 0;
+  const t = e.target as HTMLElement | null;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return 0;
+  return LETTER_KEYS[e.key] ?? 0;
 }
 
 const ARABIC_DIGITS: Record<string, string> = { '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6' };

@@ -1,81 +1,86 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import GameShell from '@/components/games/GameShell';
-import type { PlayableGame } from '@/components/games/types';
+import { RichText } from '@/components/games/parts';
+import { ShareButton } from '@/components/hub/ShareButton';
 import { SitePage } from '@/components/site/SiteHeader';
-import { BoltIcon } from '@/components/ui/icons';
-import { getCatalog, requireSession } from '@/lib/data';
-import { cairoDayNumber } from '@/lib/format';
-import { mcqContent } from '@/lib/games/defs/mcq';
-import { DEFAULT_SETTINGS } from '@/lib/games/settings';
-import { gamesForGrade } from '@/lib/student';
+import { CalendarIcon, ExternalIcon, FacebookIcon, QuestionIcon } from '@/components/ui/icons';
+import { getCatalog, getSession, gradeName } from '@/lib/data';
+import { cairoDayKey, formatDayKey } from '@/lib/format';
+import { loadDailyQuestions } from '@/lib/hub';
+import { FACEBOOK_GROUP, sectionBack } from '@/lib/sections';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'سؤال اليوم' };
 
-function hash(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-  return h >>> 0;
-}
-
-/** One multiple-choice question a day, the same for everyone in the grade, picked from its published games. */
+/** The question the team posted for today. Students answer it in the Facebook group, not here. */
 export default async function DailyPage() {
-  const { profile } = await requireSession('/daily');
-  const catalog = await getCatalog();
-  const grade = catalog.grades.find((g) => g.id === profile.grade_id);
-  const backHref = grade ? `/grades/${grade.slug}` : '/grades';
-  const supabase = await createClient();
-
-  const ids = grade ? (await gamesForGrade(supabase, grade.id, profile)).filter((g) => g.type === 'mcq').map((g) => g.id) : [];
-  const { data } = ids.length
-    ? await supabase.from('games').select('id, content, topic, difficulty').in('id', ids).order('id')
-    : profile.role === 'admin'
-      ? await supabase.from('games').select('id, content, topic, difficulty').eq('type', 'mcq').eq('status', 'published').order('id')
-      : { data: [] };
-
-  const pool: { question: unknown; topic: string | null; difficulty: number }[] = [];
-  for (const g of data ?? []) {
-    const parsed = mcqContent.safeParse(g.content);
-    if (parsed.success) for (const q of parsed.data.questions) pool.push({ question: q, topic: g.topic as string | null, difficulty: g.difficulty as number });
-  }
-
-  const day = cairoDayNumber();
-  if (!pool.length) {
-    return (
-      <SitePage back={{ href: backHref, label: grade ? `ألعاب ${grade.name}` : 'رجوع' }}>
-        <div className="card empty st-panel a-fadeup" style={{ maxWidth: 560, marginTop: 40 }}>
-          <div className="e-ic">
-            <BoltIcon size={30} />
-          </div>
-          <h3>سؤال اليوم لسه مجهزش</h3>
-          <p>أول ما يبقى فيه ألعاب اختيار من متعدد لمرحلتك، هيبقى فيه سؤال جديد كل يوم هنا.</p>
-          <Link href={backHref} className="btn btn-gold">
-            شوف الألعاب
-          </Link>
-        </div>
-      </SitePage>
-    );
-  }
-
-  const pick = pool[(day * 7919 + hash(grade?.id ?? 'all')) % pool.length];
-  const game: PlayableGame = {
-    id: `daily-${day}`,
-    slug: 'daily',
-    title: 'سؤال اليوم',
-    description: 'سؤال واحد بس، ومعاك ١٠ ثواني. يلا نشوف!',
-    type: 'mcq',
-    content: { questions: [pick.question] },
-    settings: { ...DEFAULT_SETTINGS, questionTimeSec: 10, timeLimitSec: 0, attemptsAllowed: 0, shuffle: true, showExplanations: true },
-    item_count: 1,
-    cover_url: null,
-    topic: pick.topic,
-    difficulty: pick.difficulty,
-  };
+  const [{ profile }, catalog, supabase] = await Promise.all([getSession(), getCatalog(), createClient()]);
+  const { today, past } = await loadDailyQuestions(supabase, profile);
 
   return (
-    <SitePage back={{ href: backHref, label: grade ? `ألعاب ${grade.name}` : 'رجوع' }}>
-      <GameShell key={day} game={game} mode="daily" backHref={backHref} backLabel="العب ألعاب مرحلتك" />
+    <SitePage back={sectionBack(profile, '/admin/daily')}>
+      <p className="hello">{formatDayKey(cairoDayKey())}</p>
+      <h1 className="gp-title">سؤال اليوم</h1>
+      <p className="gp-sub">فكّر فيه كويس، واكتب إجابتك في كومنت على جروب الفيس.</p>
+
+      {today ? (
+        <article className="dq-card a-fadeup">
+          <span className="dq-k">
+            <QuestionIcon size={18} /> سؤال النهارده{today.grade_id ? ` · ${gradeName(catalog, today.grade_id)}` : ''}
+          </span>
+          {today.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="dq-img" src={today.image_url} alt="" />
+          )}
+          <p className="dq-text">
+            <RichText text={today.question} />
+          </p>
+          <div className="dq-actions">
+            <a href={today.post_url || FACEBOOK_GROUP} target="_blank" rel="noopener noreferrer" className="btn btn-lg btn-fb">
+              <FacebookIcon size={22} /> جاوب على جروب الفيس
+            </a>
+            <ShareButton copy text={`سؤال اليوم من تيم حمثلاح:\n${today.question}`} label="انسخ السؤال" />
+          </div>
+          <p className="dq-note">
+            {today.post_url
+              ? 'الزرار هيفتحلك بوست السؤال على الجروب، اكتب إجابتك في كومنت.'
+              : 'ادخل الجروب ودوّر على بوست سؤال النهارده، واكتب إجابتك في كومنت.'}
+          </p>
+        </article>
+      ) : (
+        <div className="card empty st-panel a-fadeup" style={{ maxWidth: 560 }}>
+          <div className="e-ic">
+            <QuestionIcon size={30} />
+          </div>
+          <h3>سؤال النهارده لسه منزلش</h3>
+          <p>التيم بينزّل سؤال جديد كل يوم. خليك على الجروب عشان تشوفه أول ما ينزل.</p>
+          <a href={FACEBOOK_GROUP} target="_blank" rel="noopener noreferrer" className="btn btn-fb">
+            <FacebookIcon size={20} /> ادخل الجروب
+          </a>
+        </div>
+      )}
+
+      {past.length > 0 && (
+        <section className="dq-past" aria-labelledby="dq-past-title">
+          <h2 id="dq-past-title">أسئلة الأيام اللي فاتت</h2>
+          <ul>
+            {past.map((q) => (
+              <li key={q.id} className="dq-old">
+                <span className="dq-day">
+                  <CalendarIcon size={15} /> {formatDayKey(q.day)}
+                </span>
+                <p>
+                  <RichText text={q.question} />
+                </p>
+                {q.post_url && (
+                  <a href={q.post_url} target="_blank" rel="noopener noreferrer" className="dq-link">
+                    شوف الإجابات على الجروب <ExternalIcon size={14} />
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </SitePage>
   );
 }

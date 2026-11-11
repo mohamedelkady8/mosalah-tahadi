@@ -74,6 +74,68 @@ export function cairoStartOfDay(date: Date = new Date(), daysAgo = 0): Date {
   return new Date(utcMidnight - cairoOffsetMinutes(new Date(utcMidnight)) * 60000);
 }
 
+const cairoInputFmt = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Africa/Cairo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** ISO time -> "YYYY-MM-DDTHH:mm" in Egypt, the value a datetime-local input expects. */
+export function isoToCairoInput(value: string | null | undefined): string {
+  if (!value) return '';
+  const parts = Object.fromEntries(cairoInputFmt.formatToParts(new Date(value)).map((p) => [p.type, p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+/** "YYYY-MM-DDTHH:mm" typed as Egypt time -> ISO time, whatever the browser's own timezone is. */
+export function cairoInputToIso(value: string): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
+  if (!m) return null;
+  const [y, mo, d, h, mi] = m.slice(1).map(Number);
+  const wall = Date.UTC(y, mo - 1, d, h, mi);
+  let ts = wall - cairoOffsetMinutes(new Date(wall)) * 60000;
+  ts = wall - cairoOffsetMinutes(new Date(ts)) * 60000;
+  return new Date(ts).toISOString();
+}
+
+const longDayFmt = new Intl.DateTimeFormat('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Cairo' });
+const dayKeyFmt = new Intl.DateTimeFormat('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+const whenFmt = new Intl.DateTimeFormat('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Cairo' });
+
+/** "الخميس، ١٢ نوفمبر ٢٠٢٦" */
+export function formatLongDay(value: string | Date = new Date()): string {
+  return longDayFmt.format(new Date(value));
+}
+
+/** A date column ("2026-11-12") as "الخميس، ١٢ نوفمبر". */
+export function formatDayKey(key: string): string {
+  const [y, m, d] = key.split('-').map(Number);
+  return dayKeyFmt.format(new Date(Date.UTC(y, m - 1, d, 12)));
+}
+
+/** "الخميس، ١٢ نوفمبر، ٨:٠٠ م" in Egypt time. */
+export function formatWhen(value: string | Date): string {
+  return whenFmt.format(new Date(value));
+}
+
+/** "٢ يوم و٣ ساعات" / "٣ ساعات و١٠ دقايق" / "٥ دقايق" until a moment. */
+export function timeLeftText(ms: number): string {
+  const min = Math.max(1, Math.ceil(ms / 60000));
+  const d = Math.floor(min / 1440);
+  const h = Math.floor((min % 1440) / 60);
+  const m = min % 60;
+  const days = countLabel(d, { one: 'يوم', two: 'يومين', few: 'أيام', many: 'يوم' });
+  const hours = countLabel(h, { one: 'ساعة', two: 'ساعتين', few: 'ساعات', many: 'ساعة' });
+  const mins = countLabel(m, { one: 'دقيقة', two: 'دقيقتين', few: 'دقايق', many: 'دقيقة' });
+  if (d) return h ? `${days} و${hours}` : days;
+  if (h) return m ? `${hours} و${mins}` : hours;
+  return mins;
+}
+
 /** Days since epoch for the current Egyptian date. Same formula as the original daily quote. */
 export function cairoDayNumber(date: Date = new Date()): number {
   const [y, m, d] = cairoDayKey(date).split('-').map(Number);

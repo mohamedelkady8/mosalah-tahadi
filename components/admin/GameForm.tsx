@@ -7,18 +7,17 @@ import { EDITORS } from '@/components/games/editors';
 import { UploadContext } from '@/components/games/editors/parts';
 import GameShell from '@/components/games/GameShell';
 import type { PlayableGame } from '@/components/games/types';
-import { CheckIcon, EyeIcon, GameTypeIcon, GradeIcon, ImageIcon, TrashIcon, UploadIcon, XIcon } from '@/components/ui/icons';
+import { Challenge } from '@/components/hub/Challenge';
+import { CalendarIcon, CheckIcon, EyeIcon, GameTypeIcon, GradeIcon, TrashIcon, XIcon } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toast';
 import { deleteGame, saveGame } from '@/lib/actions/admin';
-import { DIFFICULTY_LABELS, durationText, formatDateTime, num } from '@/lib/format';
+import { cairoInputToIso, DIFFICULTY_LABELS, durationText, formatDateTime, formatWhen, isoToCairoInput, num } from '@/lib/format';
 import { checkContent, GAME_TYPE_LIST, getDef, itemsLabel } from '@/lib/games/registry';
-import { uid } from '@/lib/games/random';
 import { defaultSettingsFor } from '@/lib/games/settings';
 import type { GameSettings, GameType } from '@/lib/games/types';
-import { prepareImage } from '@/lib/images';
-import { createClient } from '@/lib/supabase/client';
-import { MEDIA_BUCKET } from '@/lib/supabase/config';
+import { adminHref, KIND_INFO, studentHref, type GameKind } from '@/lib/kinds';
 import type { Catalog, GameStatus } from '@/lib/types';
+import { ImageUpload, uploadImage } from './upload';
 
 type Target = { grade_id: string; track_id: string | null };
 /** Per grade: the whole grade, or only some of its tracks. */
@@ -38,6 +37,9 @@ export interface GameFormInitial {
   settings: GameSettings;
   targets: Target[];
   updated_at: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  prize: string | null;
 }
 
 export interface GameFormStats {
@@ -70,22 +72,25 @@ const ATTEMPTS = [0, 1, 2, 3, 5, 10];
 const POINTS = [1, 2, 5, 10, 15, 20, 25, 50, 100];
 const withValue = (list: number[], v: number) => (list.includes(v) ? list : [...list, v].sort((a, b) => a - b));
 
-const EXT: Record<string, string> = { 'image/webp': 'webp', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif' };
-
-async function uploadImage(file: File): Promise<string> {
-  if (!EXT[file.type]) throw new Error('ارفع صورة PNG أو JPG أو WEBP أو GIF.');
-  if (file.size > 12 * 1024 * 1024) throw new Error('الصورة كبيرة أوي، صغّرها الأول.');
-  const blob = await prepareImage(file);
-  if (blob.size > 5 * 1024 * 1024) throw new Error('الصورة أكبر من ٥ ميجا حتى بعد التصغير.');
-  const type = EXT[blob.type] ? blob.type : file.type;
-  const path = `games/${uid(14)}.${EXT[type]}`;
-  const supabase = createClient();
-  const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, blob, { contentType: type, cacheControl: '31536000', upsert: false });
-  if (error) throw new Error('الصورة ماترفعتش، جرّب تاني.');
-  return supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
+/** «ع السريع» is always multiple choice with 30 seconds a question, in the order written, with the explanations. */
+function startSettings(kind: GameKind, type: GameType): GameSettings {
+  const base = defaultSettingsFor(type);
+  if (kind === 'quick') return { ...base, questionTimeSec: 30, timeLimitSec: 0, shuffle: false, showExplanations: true, attemptsAllowed: 0 };
+  if (kind === 'contest') return { ...base, attemptsAllowed: 1 };
+  return base;
 }
 
+/** How long a contest stays open, picked from its start. */
+const CONTEST_LENGTHS = [
+  { label: 'ساعة', ms: 3600_000 },
+  { label: '٣ ساعات', ms: 3 * 3600_000 },
+  { label: 'يوم', ms: 86400_000 },
+  { label: '٣ أيام', ms: 3 * 86400_000 },
+  { label: 'أسبوع', ms: 7 * 86400_000 },
+];
+
 export function GameForm({
+  kind = 'game',
   catalog,
   topics,
   initial,
@@ -93,6 +98,7 @@ export function GameForm({
   initialType,
   initialGrade,
 }: {
+  kind?: GameKind;
   catalog: Catalog;
   topics: string[];
   initial?: GameFormInitial;
@@ -103,8 +109,11 @@ export function GameForm({
   const router = useRouter();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
+  const k = KIND_INFO[kind];
+  const fem = kind !== 'quick';
+  const it = fem ? 'ها' : 'ه';
 
-  const [type, setType] = useState<GameType | null>(initial?.type ?? initialType ?? null);
+  const [type, setType] = useState<GameType | null>(initial?.type ?? (kind === 'quick' ? 'mcq' : initialType) ?? null);
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [topic, setTopic] = useState(initial?.topic ?? '');
@@ -112,7 +121,10 @@ export function GameForm({
   const [cover, setCover] = useState<string | null>(initial?.cover_url ?? null);
   const [slug, setSlug] = useState(initial?.slug ?? '');
   const [content, setContent] = useState<unknown>(() => initial?.content ?? (type ? getDef(type).defaultContent() : null));
-  const [settings, setSettings] = useState<GameSettings>(() => initial?.settings ?? defaultSettingsFor(type ?? 'mcq'));
+  const [settings, setSettings] = useState<GameSettings>(() => initial?.settings ?? startSettings(kind, type ?? 'mcq'));
+  const [startsAt, setStartsAt] = useState(() => isoToCairoInput(initial?.starts_at));
+  const [endsAt, setEndsAt] = useState(() => isoToCairoInput(initial?.ends_at));
+  const [prize, setPrize] = useState(initial?.prize ?? '');
   const [targets, setTargets] = useState<TargetValue>(() =>
     initial ? toTargetValue(catalog, initial.targets) : initialGrade && catalog.grades.some((g) => g.id === initialGrade) ? { [initialGrade]: 'all' } : {},
   );
@@ -123,7 +135,7 @@ export function GameForm({
   const [previewKey, setPreviewKey] = useState(0);
   const sideRef = useRef<HTMLDivElement>(null);
 
-  const snapshot = JSON.stringify({ type, title, description, topic, difficulty, cover, slug, content, settings, targets });
+  const snapshot = JSON.stringify({ type, title, description, topic, difficulty, cover, slug, content, settings, targets, startsAt, endsAt, prize });
   const [savedSnapshot, setSavedSnapshot] = useState(snapshot);
   const dirty = Boolean(type) && snapshot !== savedSnapshot;
 
@@ -131,16 +143,22 @@ export function GameForm({
   const Editor = type ? EDITORS[type] : null;
   const check = useMemo(() => (type ? checkContent(type, content) : null), [type, content]);
   const targetList = useMemo(() => fromTargetValue(targets), [targets]);
+  const startsIso = kind === 'contest' ? cairoInputToIso(startsAt) : null;
+  const endsIso = kind === 'contest' ? cairoInputToIso(endsAt) : null;
 
   const problems = useCallback(
     (publishing: boolean) => {
       const out: string[] = [];
-      if (title.trim().length < 2) out.push('اكتب اسم اللعبة.');
+      if (title.trim().length < 2) out.push(`اكتب اسم ${k.the}.`);
       if (check && !check.ok) out.push(...check.errors);
-      if (publishing && targetList.length === 0) out.push('اختار اللعبة هتظهر لأنهي مرحلة.');
+      if (publishing && targetList.length === 0) out.push(`اختار ${k.the} ${fem ? 'هتظهر' : 'هيظهر'} لأنهي مرحلة.`);
+      if (kind === 'contest') {
+        if (startsIso && endsIso && endsIso <= startsIso) out.push('ميعاد نهاية المسابقة لازم يكون بعد ميعاد بدايتها.');
+        else if (publishing && (!startsIso || !endsIso)) out.push('حدد ميعاد بداية ونهاية المسابقة.');
+      }
       return out;
     },
-    [title, check, targetList],
+    [title, check, targetList, kind, k.the, fem, startsIso, endsIso],
   );
 
   // Shown after a failed publish or preview, and updated live while the admin fixes things.
@@ -173,14 +191,16 @@ export function GameForm({
 
   function chooseType(next: GameType) {
     const fresh = getDef(next).defaultContent();
-    const freshSettings = defaultSettingsFor(next);
+    const freshSettings = startSettings(kind, next);
     setType(next);
     setContent(fresh);
     setSettings(freshSettings);
     setShowIssues(null);
     setNotice(null);
     if (!initial) {
-      setSavedSnapshot(JSON.stringify({ type: next, title, description, topic, difficulty, cover, slug, content: fresh, settings: freshSettings, targets }));
+      setSavedSnapshot(
+        JSON.stringify({ type: next, title, description, topic, difficulty, cover, slug, content: fresh, settings: freshSettings, targets, startsAt, endsAt, prize }),
+      );
     }
   }
 
@@ -198,14 +218,19 @@ export function GameForm({
       return;
     }
     if (title.trim().length < 2) {
-      setNotice({ kind: 'warn', text: 'اكتب اسم اللعبة الأول، حتى لو هتحفظها مسودة.' });
+      setNotice({ kind: 'warn', text: `اكتب اسم ${k.the} الأول، حتى لو ${fem ? 'هتحفظها' : 'هتحفظه'} مسودة.` });
       document.getElementById('g-title')?.focus();
+      return;
+    }
+    if (kind === 'contest' && startsIso && endsIso && endsIso <= startsIso) {
+      setShowIssues('publish');
       return;
     }
     const sent = snapshot;
     startTransition(async () => {
       const r = await saveGame({
         id: initial?.id,
+        kind,
         type,
         title,
         description,
@@ -217,6 +242,9 @@ export function GameForm({
         content,
         settings,
         targets: targetList,
+        starts_at: startsIso,
+        ends_at: endsIso,
+        prize,
       });
       if (!r.ok) {
         setNotice({ kind: 'warn', text: r.error, list: r.errors });
@@ -233,7 +261,7 @@ export function GameForm({
       toast(r.message ?? 'اتحفظت.');
       if (r.slug) setSlug(r.slug);
       setSavedSnapshot(r.slug ? JSON.stringify({ ...JSON.parse(sent), slug: r.slug }) : sent);
-      if (!initial && r.id) router.replace(`/admin/games/${r.id}`);
+      if (!initial && r.id) router.replace(adminHref(kind, r.id));
       else router.refresh();
     });
   }
@@ -260,11 +288,11 @@ export function GameForm({
       toast('ظبط الحاجات الناقصة الأول وبعدين جرّبها.');
       return;
     }
-    setPreviewKey((k) => k + 1);
+    setPreviewKey((n) => n + 1);
     setPreview({
       id: initial?.id ?? 'preview',
       slug: slug || 'preview',
-      title: title.trim() || 'لعبة من غير اسم',
+      title: title.trim() || `${k.one} من غير اسم`,
       description,
       type,
       content: check?.ok ? check.content : content,
@@ -278,30 +306,40 @@ export function GameForm({
 
   function remove() {
     if (!initial) return;
-    if (!confirm(`تمسح «${initial.title}»؟ كل محاولات الطلاب فيها هتتمسح ونقطهم هتتحسب من جديد.`)) return;
+    if (!confirm(`تمسح «${initial.title}»؟ كل محاولات الطلاب ${fem ? 'فيها' : 'فيه'} هتتمسح ونقطهم هتتحسب من جديد.`)) return;
     startTransition(async () => {
       const r = await deleteGame(initial.id);
       if (!r.ok) return toast(r.error);
       toast(r.message ?? 'اتمسحت.');
       setSavedSnapshot(snapshot);
-      router.push('/admin/games');
+      router.push(k.adminBase);
     });
+  }
+
+  function setLength(ms: number) {
+    const from = cairoInputToIso(startsAt);
+    if (from) setEndsAt(isoToCairoInput(new Date(new Date(from).getTime() + ms).toISOString()));
   }
 
   if (!type || !def || !Editor) {
     return (
       <section className="ad-panel">
-        <h2>اختار نوع اللعبة</h2>
+        <h2>{kind === 'contest' ? 'المسابقة هتبقى إيه؟' : 'اختار نوع اللعبة'}</h2>
         <p className="muted" style={{ marginTop: -4, marginBottom: 14 }}>
-          كل نوع ليه طريقة لعب مختلفة. تقدر تعمل من كل نوع ألعاب كتير لكل المراحل.
+          {kind === 'contest'
+            ? 'اختار شكل الأسئلة. «اختار من متعدد» هتظهر للطالب بنفس شكل «ع السريع» بالشرح والتايمر.'
+            : 'كل نوع ليه طريقة لعب مختلفة. تقدر تعمل من كل نوع ألعاب كتير لكل المراحل.'}
         </p>
         <TypePicker value={null} onChange={chooseType} />
       </section>
     );
   }
 
-  const readyToPublish = check?.ok && title.trim().length >= 2 && targetList.length > 0;
+  const windowOk = kind !== 'contest' || (startsIso && endsIso && endsIso > startsIso);
+  const readyToPublish = check?.ok && title.trim().length >= 2 && targetList.length > 0 && windowOk;
   const count = check?.ok ? def.itemCount(check.content) : null;
+  const challengeLike = kind === 'quick' || (kind === 'contest' && type === 'mcq');
+  const studentPath = studentHref(kind, slug || '...');
 
   return (
     <UploadContext.Provider value={uploadImage}>
@@ -309,13 +347,13 @@ export function GameForm({
         <div className="stack" style={{ gap: 18 }}>
           <section className="ad-panel stack">
             <div className="ad-panel-head">
-              <h2>بيانات اللعبة</h2>
+              <h2>بيانات {k.the}</h2>
               <span className="row" style={{ gap: 8 }}>
                 <span className="ad-type">
                   <GameTypeIcon type={type} size={20} />
                   {def.label}
                 </span>
-                {!initial && (
+                {!initial && kind !== 'quick' && (
                   <button type="button" className="btn btn-sm btn-ghost" onClick={backToTypes} disabled={pending}>
                     غيّر النوع
                   </button>
@@ -323,16 +361,17 @@ export function GameForm({
               </span>
             </div>
             <div className="field">
-              <label htmlFor="g-title">اسم اللعبة</label>
+              <label htmlFor="g-title">{kind === 'quick' ? 'اسم الدرس أو التحدي' : `اسم ${k.the}`}</label>
               <input
                 id="g-title"
                 className="input"
                 value={title}
                 maxLength={120}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="مثلًا: مراجعة على الحال والتمييز"
+                placeholder={kind === 'quick' ? 'مثلًا: الممنوع من الصرف' : kind === 'contest' ? 'مثلًا: مسابقة الأسبوع في النحو' : 'مثلًا: مراجعة على الحال والتمييز'}
                 autoFocus={!initial}
               />
+              {kind === 'quick' && <span className="hint">بيظهر للطالب تحت «ع السريع» في كارت البداية.</span>}
             </div>
             <div className="field">
               <label htmlFor="g-desc">وصف قصير</label>
@@ -343,7 +382,9 @@ export function GameForm({
                 maxLength={400}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="الطالب هيشوفه قبل ما يبدأ. مثلًا: ١٠ أسئلة سريعة على درس الحال."
+                placeholder={
+                  kind === 'contest' ? 'الطالب هيشوفه قبل ما يبدأ. مثلًا: ١٠ أسئلة على الدروس اللي فاتت، والأوائل ليهم جوايز.' : 'الطالب هيشوفه قبل ما يبدأ. مثلًا: ١٠ أسئلة سريعة على درس الحال.'
+                }
               />
             </div>
             <div className="field-row">
@@ -385,13 +426,61 @@ export function GameForm({
             </div>
           </section>
 
+          {kind === 'contest' && (
+            <section className="ad-panel stack">
+              <div className="ad-panel-head">
+                <h2>ميعاد المسابقة</h2>
+                {startsIso && endsIso && endsIso > startsIso && <span className="badge badge-blue">{`من ${formatWhen(startsIso)} لحد ${formatWhen(endsIso)}`}</span>}
+              </div>
+              <p className="muted" style={{ marginTop: -6 }}>
+                بتوقيت مصر. قبل الميعاد الطلاب بيشوفوا المسابقة في «جاية قريب» من غير الأسئلة، والأسئلة بتظهر في ميعاد البداية بالظبط. كل طالب ليه محاولة واحدة،
+                والترتيب بالدرجة وبعدين السرعة.
+              </p>
+              <div className="field-row">
+                <div className="field">
+                  <label htmlFor="g-starts">بتبدأ</label>
+                  <input id="g-starts" className="input" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="g-ends">بتقفل</label>
+                  <input id="g-ends" className="input" type="datetime-local" value={endsAt} min={startsAt || undefined} onChange={(e) => setEndsAt(e.target.value)} />
+                </div>
+              </div>
+              {startsAt && (
+                <div className="row" style={{ gap: 6 }}>
+                  <span className="muted">
+                    <CalendarIcon size={15} /> مدتها:
+                  </span>
+                  {CONTEST_LENGTHS.map((l) => (
+                    <button key={l.label} type="button" className="chip" style={{ minHeight: 32, padding: '4px 12px', fontSize: 13 }} onClick={() => setLength(l.ms)}>
+                      {l.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="field">
+                <label htmlFor="g-prize">الجايزة (اختياري)</label>
+                <input
+                  id="g-prize"
+                  className="input"
+                  maxLength={200}
+                  value={prize}
+                  onChange={(e) => setPrize(e.target.value)}
+                  placeholder="مثلًا: الأول والتاني والتالت ليهم ملزمة المراجعة النهائية هدية"
+                />
+              </div>
+            </section>
+          )}
+
           <section className="ad-panel">
             <div className="ad-panel-head">
-              <h2>محتوى اللعبة</h2>
+              <h2>{kind === 'game' ? 'محتوى اللعبة' : 'الأسئلة'}</h2>
               {count !== null && <span className="badge badge-gold">{itemsLabel(type, count)}</span>}
             </div>
             <p className="muted" style={{ marginTop: -4, marginBottom: 14 }}>
-              {def.howTo}
+              {kind === 'quick'
+                ? 'الطالب بيشوف سؤال سؤال بتايمر، وبعد كل إجابة شرح الاختيار اللي اختاره وشرح الإجابة الصح. لو كتبت «(مشكلتك: ...)» في شرح اختيار غلط، هتظهرله في النتيجة تحت «مشاكلك».'
+                : def.howTo}
             </p>
             <Editor value={content} onChange={setContent} />
           </section>
@@ -448,18 +537,25 @@ export function GameForm({
               )}
               <div className="field">
                 <label htmlFor="g-attempts">عدد المحاولات</label>
-                <select
-                  id="g-attempts"
-                  className="select"
-                  value={settings.attemptsAllowed}
-                  onChange={(e) => setSettings({ ...settings, attemptsAllowed: Number(e.target.value) })}
-                >
-                  {withValue(ATTEMPTS, settings.attemptsAllowed).map((a) => (
-                    <option key={a} value={a}>
-                      {a ? (a === 1 ? 'محاولة واحدة' : `${num(a)} محاولات`) : 'مفتوح'}
-                    </option>
-                  ))}
-                </select>
+                {kind === 'contest' ? (
+                  <>
+                    <input id="g-attempts" className="input" value="محاولة واحدة" disabled />
+                    <span className="hint">المسابقة دايمًا محاولة واحدة.</span>
+                  </>
+                ) : (
+                  <select
+                    id="g-attempts"
+                    className="select"
+                    value={settings.attemptsAllowed}
+                    onChange={(e) => setSettings({ ...settings, attemptsAllowed: Number(e.target.value) })}
+                  >
+                    {withValue(ATTEMPTS, settings.attemptsAllowed).map((a) => (
+                      <option key={a} value={a}>
+                        {a ? (a === 1 ? 'محاولة واحدة' : `${num(a)} محاولات`) : 'مفتوح'}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
             {(def.usesShuffle !== false || def.usesExplanations !== false) && (
@@ -490,17 +586,23 @@ export function GameForm({
             <div className="ad-panel-head" style={{ marginBottom: 0 }}>
               <span className={`ad-status${status === 'published' ? ' pub' : ''}`} style={{ fontWeight: 700 }}>
                 <span className="dot" />
-                {status === 'published' ? 'منشورة للطلاب' : 'مسودة'}
+                {status === 'published' ? `${fem ? 'منشورة' : 'منشور'} للطلاب` : 'مسودة'}
               </span>
-              {dirty ? <span className="badge badge-gold">فيه تعديلات مش محفوظة</span> : initial && <span className="badge badge-ok">محفوظة</span>}
+              {dirty ? <span className="badge badge-gold">فيه تعديلات مش محفوظة</span> : initial && <span className="badge badge-ok">{fem ? 'محفوظة' : 'محفوظ'}</span>}
             </div>
             {readyToPublish ? (
               <span className="badge badge-ok" style={{ alignSelf: 'flex-start' }}>
-                <CheckIcon size={14} /> جاهزة للنشر
+                <CheckIcon size={14} /> {fem ? 'جاهزة' : 'جاهز'} للنشر
               </span>
             ) : (
               <span className="muted">
-                {check && !check.ok ? 'لسه فيه حاجات ناقصة في المحتوى.' : targetList.length === 0 ? 'اختار المراحل عشان تقدر تنشرها.' : 'اكتب اسم اللعبة.'}
+                {check && !check.ok
+                  ? 'لسه فيه حاجات ناقصة في المحتوى.'
+                  : targetList.length === 0
+                    ? `اختار المراحل عشان تقدر تنشر${it}.`
+                    : !windowOk
+                      ? 'حدد ميعاد بداية ونهاية المسابقة.'
+                      : `اكتب اسم ${k.the}.`}
               </span>
             )}
             {status === 'published' ? (
@@ -509,7 +611,7 @@ export function GameForm({
                   {pending ? <span className="spinner" /> : <CheckIcon size={18} />} احفظ التعديلات
                 </button>
                 <button type="button" className="btn btn-ghost btn-block" disabled={pending} onClick={() => save('draft')}>
-                  شيلها من عند الطلاب (مسودة)
+                  شيل{it} من عند الطلاب (مسودة)
                 </button>
               </>
             ) : (
@@ -523,7 +625,7 @@ export function GameForm({
               </>
             )}
             <button type="button" className="btn btn-ink btn-block" disabled={pending} onClick={openPreview}>
-              <EyeIcon size={18} /> جرّبها كأنك طالب
+              <EyeIcon size={18} /> جرّب{it} كأنك طالب
             </button>
             {issues.length > 0 && (
               <div className="form-error" role="alert">
@@ -554,7 +656,7 @@ export function GameForm({
 
           <section className="ad-panel">
             <div className="ad-panel-head">
-              <h2>هتظهر لمين؟</h2>
+              <h2>{fem ? 'هتظهر' : 'هيظهر'} لمين؟</h2>
               <span className="row" style={{ gap: 6 }}>
                 <button
                   type="button"
@@ -572,15 +674,20 @@ export function GameForm({
           </section>
 
           <section className="ad-panel">
-            <h2>صورة اللعبة</h2>
-            <CoverField value={cover} onChange={setCover} />
+            <h2>صورة {k.the}</h2>
+            <ImageUpload
+              value={cover}
+              onChange={setCover}
+              alt={`صورة ${k.the}`}
+              emptyText={kind === 'game' ? 'من غير صورة، هيظهر شكل نوع اللعبة' : 'من غير صورة، هتظهر صورة المستر'}
+            />
           </section>
 
           <section className="ad-panel stack">
-            <h2>رابط اللعبة</h2>
+            <h2>رابط {k.the}</h2>
             <div className="field">
               <label htmlFor="g-slug" className="visually-hidden">
-                رابط اللعبة
+                رابط {k.the}
               </label>
               <input
                 id="g-slug"
@@ -591,21 +698,23 @@ export function GameForm({
                 onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
                 placeholder="هيتعمل لوحده"
               />
-              <span className="hint">حروف إنجليزي صغيرة وأرقام وشرطة. الطلاب بيفتحوا اللعبة من /play/{slug || '...'}</span>
+              <span className="hint">
+                حروف إنجليزي صغيرة وأرقام وشرطة. الطلاب بيفتحو{it} من {studentPath}
+              </span>
             </div>
-            {initial && status === 'published' && !dirty && (
-              <Link href={`/play/${initial.slug}`} target="_blank" className="btn btn-sm btn-ghost">
-                افتحها زي الطالب
+            {initial && (status === 'published' || kind === 'contest') && !dirty && (
+              <Link href={studentHref(kind, initial.slug)} target="_blank" className="btn btn-sm btn-ghost">
+                افتح{it} زي الطالب
               </Link>
             )}
           </section>
 
           {initial && (
             <section className="ad-panel">
-              <h2>أرقام اللعبة</h2>
+              <h2>أرقام {k.the}</h2>
               {stats && stats.plays > 0 ? (
                 <dl className="ad-kv">
-                  <dt>اتلعبت</dt>
+                  <dt>المحاولات</dt>
                   <dd>{num(stats.plays)} مرة</dd>
                   <dt>عدد الطلاب</dt>
                   <dd>{num(stats.players)}</dd>
@@ -619,7 +728,12 @@ export function GameForm({
                   )}
                 </dl>
               ) : (
-                <p className="muted">لسه محدش لعبها.</p>
+                <p className="muted">لسه محدش {kind === 'game' ? 'لعبها' : `دخل${it}`}.</p>
+              )}
+              {kind === 'contest' && initial.status === 'published' && (
+                <Link href={studentHref(kind, initial.slug)} target="_blank" className="btn btn-sm btn-ghost" style={{ marginTop: 10 }}>
+                  شوف الترتيب
+                </Link>
               )}
               <p className="muted" style={{ marginTop: 10, fontSize: 13 }}>
                 آخر تعديل: {formatDateTime(initial.updated_at)}
@@ -629,12 +743,12 @@ export function GameForm({
 
           {initial && (
             <section className="ad-panel ad-danger-zone">
-              <h2>مسح اللعبة</h2>
+              <h2>مسح {k.the}</h2>
               <p className="muted" style={{ marginBottom: 10 }}>
-                المسح نهائي، ومحاولات الطلاب فيها هتتمسح كمان.
+                المسح نهائي، ومحاولات الطلاب {fem ? 'فيها' : 'فيه'} هتتمسح كمان.
               </p>
               <button type="button" className="btn btn-sm btn-danger" disabled={pending} onClick={remove}>
-                <TrashIcon size={16} /> امسح اللعبة
+                <TrashIcon size={16} /> امسح {k.the}
               </button>
             </section>
           )}
@@ -643,11 +757,25 @@ export function GameForm({
 
       {preview && (
         <div className="modal-back" role="dialog" aria-modal="true" aria-label={`معاينة ${preview.title}`} onClick={(e) => e.target === e.currentTarget && setPreview(null)}>
-          <div className="modal gm-modal">
+          <div className={`modal gm-modal${challengeLike ? ' qz-modal' : ''}`}>
             <button type="button" className="icon-btn modal-close" onClick={() => setPreview(null)} aria-label="قفل المعاينة">
               <XIcon size={18} />
             </button>
-            <GameShell key={previewKey} game={preview} mode="preview" onClose={() => setPreview(null)} />
+            {challengeLike ? (
+              <Challenge
+                key={previewKey}
+                game={preview}
+                variant={kind === 'contest' ? 'contest' : 'quick'}
+                preview
+                heading={kind === 'quick' ? 'ع السريع' : preview.title}
+                audience={kind === 'quick' ? 'الطلاب' : undefined}
+                dateLabel={kind === 'contest' && startsIso ? formatWhen(startsIso) : undefined}
+                prize={kind === 'contest' ? prize || null : null}
+                onClose={() => setPreview(null)}
+              />
+            ) : (
+              <GameShell key={previewKey} game={preview} mode="preview" onClose={() => setPreview(null)} />
+            )}
           </div>
         </div>
       )}
@@ -724,51 +852,6 @@ function TargetPicker({ catalog, value, onChange }: { catalog: Catalog; value: T
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function CoverField({ value, onChange }: { value: string | null; onChange: (url: string | null) => void }) {
-  const input = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  async function pick(file: File | undefined) {
-    if (!file) return;
-    setBusy(true);
-    setError('');
-    try {
-      onChange(await uploadImage(file));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'الصورة ماترفعتش.');
-    } finally {
-      setBusy(false);
-      if (input.current) input.current.value = '';
-    }
-  }
-
-  return (
-    <div className="stack" style={{ gap: 10 }}>
-      <div className="ad-cover">
-        {value ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt="صورة اللعبة" />
-            <button type="button" className="icon-btn danger" onClick={() => onChange(null)} aria-label="شيل الصورة" title="شيل الصورة">
-              <TrashIcon size={16} />
-            </button>
-          </>
-        ) : (
-          <span className="row" style={{ gap: 8, fontWeight: 600 }}>
-            <ImageIcon size={20} /> من غير صورة، هيظهر شكل نوع اللعبة
-          </span>
-        )}
-      </div>
-      <input ref={input} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => pick(e.target.files?.[0])} />
-      <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={() => input.current?.click()}>
-        {busy ? <span className="spinner" /> : <UploadIcon size={16} />} {busy ? 'بنرفع الصورة...' : value ? 'غيّر الصورة' : 'ارفع صورة'}
-      </button>
-      {error && <span className="form-error">{error}</span>}
     </div>
   );
 }

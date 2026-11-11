@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Sans_Arabic, Lalezar, Montserrat } from 'next/font/google';
 import { TransitionSettler } from '@/components/motion/PageTransition';
+import { SmoothScroll } from '@/components/motion/SmoothScroll';
 import { ToastProvider } from '@/components/ui/Toast';
 import './globals.css';
 import './ui.css';
 import './games.css';
+import './hub.css';
 
 const lalezar = Lalezar({
   weight: '400',
@@ -29,7 +31,7 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: { default: 'موقع تيم حمثلاح', template: '%s | تيم حمثلاح' },
-  description: 'ألعاب ومسابقات في اللغة العربية لطلاب ثانوي، من تيم حمثلاح. We Don’t Study Alone.',
+  description: 'ألعاب ومسابقات ونصايح وفيديوهات في اللغة العربية لطلاب ثانوي، من تيم حمثلاح. We Don’t Study Alone.',
   icons: { icon: '/assets/logo.svg' },
 };
 
@@ -46,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ToastProvider>{children}</ToastProvider>
         <TransitionSettler />
+        <SmoothScroll />
       </body>
     </html>
   );

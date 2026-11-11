@@ -32,7 +32,7 @@ export default function GameShell({
   onClose,
 }: {
   game: PlayableGame;
-  mode: 'play' | 'preview' | 'practice' | 'daily';
+  mode: 'play' | 'preview' | 'practice';
   backHref?: string;
   backLabel?: string;
   stats?: PlayStats;
@@ -184,11 +184,9 @@ export default function GameShell({
                   <ClockIcon size={14} /> {num(settings.questionTimeSec)} ثانية لكل سؤال
                 </span>
               )}
-              {mode !== 'daily' && (
-                <span className="badge">
-                  {num(settings.pointsPerItem)} نقط لكل {def.pointsUnit ?? 'إجابة صح'}
-                </span>
-              )}
+              <span className="badge">
+                {num(settings.pointsPerItem)} نقط لكل {def.pointsUnit ?? 'إجابة صح'}
+              </span>
               {attemptsLeft !== null && (
                 <span className={`badge ${attemptsLeft ? 'badge-blue' : 'badge-bad'}`}>
                   {attemptsLeft ? `فاضلك ${attemptsText(attemptsLeft)} من ${num(settings.attemptsAllowed)}` : 'خلصت محاولاتك'}
@@ -205,7 +203,6 @@ export default function GameShell({
               <span>{def.howTo}</span>
             </div>
             {mode === 'practice' && <p className="muted">دي لعبة تجريبية، نتيجتها مش بتتحفظ.</p>}
-            {mode === 'daily' && <p className="muted">كل يوم سؤال جديد. ركّز، الوقت قليل! النتيجة دي مش بتدخل في النقط.</p>}
             <div className="gm-actions" style={{ justifyContent: 'center', marginTop: 4 }}>
               {canPlay ? (
                 <button type="button" className="btn btn-gold btn-lg" onClick={start} autoFocus>
@@ -264,15 +261,9 @@ export default function GameShell({
         <ResultView
           outcome={outcome}
           mode={mode}
-          canReplay={canPlay && mode !== 'daily'}
+          canReplay={canPlay}
           replayNote={
-            mode === 'daily'
-              ? 'تعالى بكرة، هيبقى فيه سؤال جديد مستنيك.'
-              : !canPlay
-                ? 'خلصت عدد المحاولات المسموحة للعبة دي.'
-                : attemptsLeft !== null
-                  ? `فاضلك ${attemptsText(attemptsLeft)}.`
-                  : undefined
+            !canPlay ? 'خلصت عدد المحاولات المسموحة للعبة دي.' : attemptsLeft !== null ? `فاضلك ${attemptsText(attemptsLeft)}.` : undefined
           }
           onReplay={start}
           onRetrySave={pending ? () => void save(pending.answers, pending.durationMs, pending.local) : undefined}

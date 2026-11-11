@@ -85,7 +85,7 @@ export function NextPage({ href, label = 'الصفحة التالية' }: { href
       root.classList.add('is-going');
       const slides = canSlidePages();
       if (!slides && !reduce) root.classList.add('is-leaving');
-      navTimer = window.setTimeout(() => slideRef.current(href, 'up'), reduce ? 0 : slides ? 260 : 420);
+      navTimer = window.setTimeout(() => slideRef.current(href, 'up'), reduce ? 0 : slides ? 180 : 340);
     };
     goRef.current = go;
     const add = (amount: number) => {
@@ -140,7 +140,7 @@ export function NextPage({ href, label = 'الصفحة التالية' }: { href
         introDone = true;
         syncCue();
       },
-      reduce ? 0 : 2600,
+      reduce ? 0 : 1600,
     );
 
     window.addEventListener('wheel', onWheel, { passive: true });
@@ -180,6 +180,7 @@ export function NextPage({ href, label = 'الصفحة التالية' }: { href
           goRef.current();
         }}
       >
+        <span aria-hidden="true" className="hm-page hm-page-4" />
         <span aria-hidden="true" className="hm-page hm-page-3" />
         <span aria-hidden="true" className="hm-page hm-page-2" />
         <span className="hm-page hm-page-1">

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PRIVATE_META } from '@/lib/site';
 import Link from 'next/link';
 import { Countdown } from '@/components/hub/Countdown';
 import { SitePage } from '@/components/site/SiteHeader';
@@ -10,7 +11,7 @@ import type { ContestPhase } from '@/lib/kinds';
 import { FACEBOOK_GROUP, sectionBack } from '@/lib/sections';
 import { createClient } from '@/lib/supabase/server';
 
-export const metadata: Metadata = { title: 'مسابقات' };
+export const metadata: Metadata = { title: 'مسابقات', ...PRIVATE_META };
 
 const TAGS: Record<ContestPhase, string> = { live: 'شغالة دلوقتي', upcoming: 'قريب', ended: 'خلصت' };
 

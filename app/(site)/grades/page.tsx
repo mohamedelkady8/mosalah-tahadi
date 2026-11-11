@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/site';
 import { GradeCards } from '@/components/grades/GradeCards';
 import { SitePage } from '@/components/site/SiteHeader';
 import { Steps } from '@/components/site/Steps';
@@ -6,7 +7,11 @@ import { QuoteIcon } from '@/components/ui/icons';
 import { getCatalog, getQuoteOfDay, getSession } from '@/lib/data';
 import { firstName } from '@/lib/format';
 
-export const metadata: Metadata = { title: 'اختار مرحلتك' };
+export const metadata: Metadata = pageMeta({
+  title: 'اختار مرحلتك: أولى وتانية وتالتة ثانوي',
+  description: 'اختار مرحلتك في ثانوي (أولى، تانية عام، تانية بكالوريا، تالتة) والعب ألعاب ومسابقات عربي معمولة لمنهجك مع تيم حمثلاح ومستر محمد صلاح.',
+  path: '/grades',
+});
 
 export default async function GradesPage() {
   const [catalog, quote, session] = await Promise.all([getCatalog(), getQuoteOfDay(), getSession()]);

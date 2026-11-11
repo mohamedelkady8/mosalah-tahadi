@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/site';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { GameBrowser } from '@/components/games/GameBrowser';
@@ -15,7 +16,12 @@ type Params = Promise<{ slug: string }>;
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const grade = (await getCatalog()).grades.find((g) => g.slug === slug);
-  return { title: grade ? `ألعاب ${grade.name}` : 'المرحلة' };
+  if (!grade) return { title: 'المرحلة' };
+  return pageMeta({
+    title: `ألعاب ومراجعات عربي ${grade.name}`,
+    description: `ألعاب ومسابقات لغة عربية لطلاب ${grade.name}: نحو وبلاغة وقراءة وتعبير، بنقط وترتيب ولوحة شرف، من تيم حمثلاح مع مستر محمد صلاح.`,
+    path: `/grades/${grade.slug}`,
+  });
 }
 
 export default async function GradeGamesPage({ params }: { params: Params }) {

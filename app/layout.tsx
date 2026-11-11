@@ -3,6 +3,7 @@ import { IBM_Plex_Sans_Arabic, Lalezar, Montserrat } from 'next/font/google';
 import { TransitionSettler } from '@/components/motion/PageTransition';
 import { SmoothScroll } from '@/components/motion/SmoothScroll';
 import { ToastProvider } from '@/components/ui/Toast';
+import { HOME_TITLE, OG_IMAGE, SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_URL, TEACHER_NAME } from '@/lib/site';
 import './globals.css';
 import './ui.css';
 import './games.css';
@@ -41,9 +42,19 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'موقع تيم حمثلاح', template: '%s | تيم حمثلاح' },
-  description: 'ألعاب ومسابقات ونصايح وفيديوهات في اللغة العربية لطلاب ثانوي، من تيم حمثلاح. We Don’t Study Alone.',
-  icons: { icon: '/assets/logo.svg' },
+  metadataBase: new URL(SITE_URL),
+  title: { default: HOME_TITLE, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: SITE_KEYWORDS,
+  authors: [{ name: TEACHER_NAME }],
+  creator: TEACHER_NAME,
+  category: 'education',
+  formatDetection: { telephone: false },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
+  openGraph: { type: 'website', locale: 'ar_EG', siteName: SITE_NAME, title: HOME_TITLE, description: SITE_DESCRIPTION, images: [OG_IMAGE] },
+  twitter: { card: 'summary_large_image', title: HOME_TITLE, description: SITE_DESCRIPTION, images: [OG_IMAGE.url] },
+  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
 };
 
 export const viewport: Viewport = {

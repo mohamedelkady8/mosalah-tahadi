@@ -34,6 +34,8 @@ Copy `.env.example` to `.env.local` and fill it from **Project Settings > API Ke
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The anon (or publishable) key |
 | `SUPABASE_SERVICE_ROLE_KEY` | The service_role (or secret) key. Server only. |
 | `PHONE_EMAIL_DOMAIN` | Domain for the internal login emails of phone sign-ups (students never see it) |
+| `NEXT_PUBLIC_SITE_URL` | Optional. Public address used in the sitemap, canonical links and share cards. On Vercel it defaults to the production domain. |
+| `GOOGLE_SITE_VERIFICATION` | Optional. The `content` value of the Google Search Console HTML tag, to verify the site. |
 
 The service role key is needed to save game scores, to sign up with a phone number, and for the admin's "new student", "reset password" and "delete account" actions. Without it the site still runs, but results are not saved and only email sign-up works (with Supabase's email confirmation).
 

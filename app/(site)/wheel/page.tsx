@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PRIVATE_META } from '@/lib/site';
 import { SpinWheel } from '@/components/hub/SpinWheel';
 import { SitePage } from '@/components/site/SiteHeader';
 import { FlashToast } from '@/components/ui/Toast';
@@ -8,7 +9,7 @@ import { sectionAvailability } from '@/lib/hub';
 import { SECTION_KEYS, SECTIONS } from '@/lib/sections';
 import { createClient } from '@/lib/supabase/server';
 
-export const metadata: Metadata = { title: 'لف العجلة' };
+export const metadata: Metadata = { title: 'لف العجلة', ...PRIVATE_META };
 
 /** The student's home screen: the wheel decides what they do today. */
 export default async function WheelPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {

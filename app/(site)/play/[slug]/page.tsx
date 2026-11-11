@@ -8,6 +8,7 @@ import { SitePage } from '@/components/site/SiteHeader';
 import { GamepadIcon } from '@/components/ui/icons';
 import { getCatalog, requireSession } from '@/lib/data';
 import { studentHref, type GameKind } from '@/lib/kinds';
+import { PRIVATE_META } from '@/lib/site';
 import { createClient } from '@/lib/supabase/server';
 
 type Params = Promise<{ slug: string }>;
@@ -24,7 +25,7 @@ const loadGame = cache(async (slug: string) => {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const game = await loadGame((await params).slug);
-  return { title: game?.title ?? 'اللعبة' };
+  return { title: game?.title ?? 'اللعبة', ...PRIVATE_META };
 }
 
 export default async function PlayPage({ params }: { params: Params }) {

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/site';
 import { TipDeck } from '@/components/hub/TipDeck';
 import { SitePage } from '@/components/site/SiteHeader';
 import { BulbIcon } from '@/components/ui/icons';
@@ -6,7 +7,11 @@ import { getSession } from '@/lib/data';
 import { loadTips } from '@/lib/hub';
 import { sectionBack } from '@/lib/sections';
 
-export const metadata: Metadata = { title: 'نصايح' };
+export const metadata: Metadata = pageMeta({
+  title: 'نصايح للمذاكرة',
+  description: 'نصايح قصيرة للمذاكرة والتنظيم وحل امتحان العربي لطلاب ثانوي، من تيم حمثلاح مع مستر محمد صلاح.',
+  path: '/tips',
+});
 
 export default async function TipsPage() {
   const { profile } = await getSession();

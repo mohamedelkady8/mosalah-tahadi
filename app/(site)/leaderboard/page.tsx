@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/site';
 import Link from 'next/link';
 import { SitePage } from '@/components/site/SiteHeader';
 import { TrophyIcon } from '@/components/ui/icons';
@@ -6,7 +7,11 @@ import { getCatalog, getSession } from '@/lib/data';
 import { cairoDayKey, cairoStartOfDay, formatDate, num } from '@/lib/format';
 import { createClient } from '@/lib/supabase/server';
 
-export const metadata: Metadata = { title: 'لوحة الشرف' };
+export const metadata: Metadata = pageMeta({
+  title: 'لوحة الشرف',
+  description: 'ترتيب أشطر طلاب تيم حمثلاح في كل مرحلة، الأسبوع ده ومن الأول.',
+  path: '/leaderboard',
+});
 
 type Search = Promise<{ grade?: string; track?: string; period?: string }>;
 

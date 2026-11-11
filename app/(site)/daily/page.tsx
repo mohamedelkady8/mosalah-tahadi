@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/site';
 import { RichText } from '@/components/games/parts';
 import { ShareButton } from '@/components/hub/ShareButton';
 import { SitePage } from '@/components/site/SiteHeader';
@@ -8,7 +9,11 @@ import { cairoDayKey, formatDayKey } from '@/lib/format';
 import { loadDailyQuestions } from '@/lib/hub';
 import { FACEBOOK_GROUP, sectionBack } from '@/lib/sections';
 
-export const metadata: Metadata = { title: 'سؤال اليوم' };
+export const metadata: Metadata = pageMeta({
+  title: 'سؤال اليوم في العربي',
+  description: 'كل يوم سؤال عربي جديد لطلاب ثانوي (نحو وبلاغة وقراءة). فكّر فيه واكتب إجابتك على جروب تيم حمثلاح.',
+  path: '/daily',
+});
 
 /** The question the team posted for today. Students answer it in the Facebook group, not here. */
 export default async function DailyPage() {

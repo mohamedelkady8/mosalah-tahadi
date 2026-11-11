@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/site';
 import { notFound } from 'next/navigation';
 import GameShell from '@/components/games/GameShell';
 import { SitePage } from '@/components/site/SiteHeader';
@@ -8,7 +9,12 @@ type Params = Promise<{ slug: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const game = getSample((await params).slug);
-  return { title: game?.title ?? 'لعبة تجريبية' };
+  if (!game) return { title: 'لعبة تجريبية' };
+  return pageMeta({
+    title: game.title,
+    description: game.description || `العب «${game.title}» ببلاش، لعبة لغة عربية لطلاب ثانوي من تيم حمثلاح.`,
+    path: `/try/${game.slug}`,
+  });
 }
 
 export default async function TryGamePage({ params }: { params: Params }) {

@@ -1,11 +1,16 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/site';
 import Link from 'next/link';
 import { GameCards } from '@/components/games/GameCards';
 import { SitePage } from '@/components/site/SiteHeader';
 import { getSession } from '@/lib/data';
 import { SAMPLE_GAMES } from '@/lib/games/samples';
 
-export const metadata: Metadata = { title: 'جرّب الألعاب' };
+export const metadata: Metadata = pageMeta({
+  title: 'جرّب ألعاب العربي من غير حساب',
+  description: 'جرّب ألعاب لغة عربية لثانوي ببلاش ومن غير تسجيل: اختيار من متعدد، صح ولا غلط، وصّل، كروت الذاكرة، رتّب، كمّل الفراغ، صنّف، دوّر على الكلمة، وركّبها.',
+  path: '/try',
+});
 
 export default async function TryPage() {
   const { profile } = await getSession();

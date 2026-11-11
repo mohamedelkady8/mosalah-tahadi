@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/site';
 import { redirect } from 'next/navigation';
 import { SignupForm } from '@/components/auth/AuthForms';
 import { SitePage } from '@/components/site/SiteHeader';
@@ -6,7 +7,11 @@ import { NOT_CONFIGURED } from '@/lib/auth/errors';
 import { getCatalog, getSession } from '@/lib/data';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
-export const metadata: Metadata = { title: 'حساب جديد' };
+export const metadata: Metadata = pageMeta({
+  title: 'اعمل حساب جديد',
+  description: 'اعمل حساب ببلاش على موقع تيم حمثلاح، واختار مرحلتك، والعب ألعاب ومسابقات العربي واجمع نقط مع مستر محمد صلاح.',
+  path: '/signup',
+});
 
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ grade?: string }> }) {
   const { grade } = await searchParams;

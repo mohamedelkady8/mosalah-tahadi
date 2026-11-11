@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/site';
 import { redirect } from 'next/navigation';
 import { LoginForm } from '@/components/auth/AuthForms';
 import { SitePage } from '@/components/site/SiteHeader';
@@ -7,7 +8,11 @@ import { NOT_CONFIGURED } from '@/lib/auth/errors';
 import { getSession } from '@/lib/data';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
-export const metadata: Metadata = { title: 'تسجيل الدخول' };
+export const metadata: Metadata = pageMeta({
+  title: 'تسجيل الدخول',
+  description: 'ادخل على حسابك في موقع تيم حمثلاح برقم موبايلك، وكمّل ألعابك ونقطك.',
+  path: '/login',
+});
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;

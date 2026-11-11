@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PRIVATE_META } from '@/lib/site';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import GameShell from '@/components/games/GameShell';
@@ -17,7 +18,7 @@ import { contestPhase, kindOf, studentHref, type ContestPhase } from '@/lib/kind
 import { FACEBOOK_GROUP } from '@/lib/sections';
 import { createClient } from '@/lib/supabase/server';
 
-export const metadata: Metadata = { title: 'مسابقة' };
+export const metadata: Metadata = { title: 'مسابقة', ...PRIVATE_META };
 
 type Params = Promise<{ slug: string }>;
 type Search = Promise<{ done?: string }>;

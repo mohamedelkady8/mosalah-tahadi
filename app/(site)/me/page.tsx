@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PRIVATE_META } from '@/lib/site';
 import Link from 'next/link';
 import { ProfileForm, PasswordForm } from '@/components/me/ProfileForms';
 import { SitePage } from '@/components/site/SiteHeader';
@@ -12,7 +13,7 @@ import { kindOf, studentHref, type GameKind } from '@/lib/kinds';
 import { computeBadges, computeStreak, type Badge } from '@/lib/student';
 import { createClient } from '@/lib/supabase/server';
 
-export const metadata: Metadata = { title: 'صفحتي' };
+export const metadata: Metadata = { title: 'صفحتي', ...PRIVATE_META };
 
 const BADGE_ICONS: Record<Badge['icon'], React.ReactNode> = {
   flame: <FlameIcon size={26} />,
